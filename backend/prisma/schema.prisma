@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GlobalRole {
+  USER
+  ADMIN
+}
+
+enum ProjectRole {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum TaskType {
+  STORY
+  TASK
+  BUG
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  COMMENT_ADDED
+  USER_MENTIONED
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  password     String
+  name         String
+  avatarUrl    String?
+  globalRole   GlobalRole  @default(USER)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  projects     ProjectMember[]
+  tasksAssigned Task[]  @relation("TaskAssignee")
+  tasksReported Task[]  @relation("TaskReporter")
+
+  comments     Comment[]
+  notifications Notification[]
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     ProjectMember[]
+  boards      Board[]
+  tasks       Task[]
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid())
+
+  projectId String
+  userId    String
+
+  role      ProjectRole
+
+  project   Project @relation(fields: [projectId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  name      String
+
+  projectId String
+
+  createdAt DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id])
+  columns   Column[]
+}
+
+model Column {
+  id        String   @id @default(uuid())
+  name      String
+  position  Int
+  wipLimit  Int?
+
+  boardId   String
+
+  board     Board @relation(fields: [boardId], references: [id])
+
+  tasks     Task[]
+}
+
+model Task {
+  id          String @id @default(uuid())
+
+  title       String
+  description String?
+
+  type        TaskType
+  status      TaskStatus
+  priority    TaskPriority
+
+  dueDate     DateTime?
+
+  projectId   String
+  columnId    String?
+
+  parentId    String?
+
+  assigneeId  String?
+  reporterId  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+
+  project     Project @relation(fields: [projectId], references: [id])
+
+  column      Column? @relation(fields: [columnId], references: [id])
+
+  parent      Task?   @relation("TaskHierarchy", fields: [parentId], references: [id])
+  children    Task[]  @relation("TaskHierarchy")
+
+  assignee    User? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  reporter    User? @relation("TaskReporter", fields: [reporterId], references: [id])
+
+  comments    Comment[]
+  auditLogs   TaskAudit[]
+}
+
+model Comment {
+  id        String @id @default(uuid())
+
+  content   String
+
+  taskId    String
+  userId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task @relation(fields: [taskId], references: [id])
+  user      User @relation(fields: [userId], references: [id])
+}
+
+model TaskAudit {
+  id        String @id @default(uuid())
+
+  taskId    String
+
+  field     String
+  oldValue  String?
+  newValue  String?
+
+  userId    String
+
+  createdAt DateTime @default(now())
+
+  task      Task @relation(fields: [taskId], references: [id])
+}
+
+model Notification {
+  id        String @id @default(uuid())
+
+  userId    String
+  type      NotificationType
+
+  message   String
+  read      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+}
