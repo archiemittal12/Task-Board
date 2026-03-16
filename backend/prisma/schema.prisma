@@ -52,14 +52,11 @@ model User {
   name         String
   avatarUrl    String?
   globalRole   GlobalRole  @default(USER)
-
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
   projects     ProjectMember[]
   tasksAssigned Task[]  @relation("TaskAssignee")
   tasksReported Task[]  @relation("TaskReporter")
-
   comments     Comment[]
   notifications Notification[]
 }
