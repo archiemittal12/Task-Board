@@ -6,7 +6,21 @@ const {
 
 
 // this is to avoid duplicate column names that are visually similar (e.g. "To Do" vs "to do")
-const normalizeName = (name) => name.trim().toLowerCase();
+const ensureUniqueColumnName = async (boardId, name, excludeId = null) => {
+  const normalizeName = (n) => n.trim().toLowerCase();
+  const columns = await prisma.column.findMany({
+    where: { boardId },
+    select: { id: true, name: true }
+  });
+  const isDuplicate = columns.some(
+    (col) =>
+      col.id !== excludeId &&
+      normalizeName(col.name) === normalizeName(name)
+  );
+  if (isDuplicate) {
+    throw new Error("A column with a similar name already exists in this board");
+  }
+};
 
 
 //helper to get board and validate existence
@@ -62,7 +76,7 @@ const calculatePosition = async ({
 }) => {
   const MIN_GAP = 10;
 
-  // CASE 1 — BEFORE
+  //if both before and after are provided, we prioritize before for better UX (dragging between two columns)
   if (beforeColumnId) {
     const target = await getColumnInBoard(beforeColumnId, boardId);
     const prev = await prisma.column.findFirst({
@@ -78,10 +92,10 @@ const calculatePosition = async ({
       await rebalanceColumns(boardId);
       return calculatePosition({ boardId, beforeColumnId });
     }
-    return (prev.position + target.position) / 2;
+   return prev.position + Math.floor((target.position - prev.position) / 2);
   }
 
-  // CASE 2 — AFTER
+  //if after is provided without before, we append after that column
   if (afterColumnId) {
     const target = await getColumnInBoard(afterColumnId, boardId);
 
@@ -98,10 +112,10 @@ const calculatePosition = async ({
       await rebalanceColumns(boardId);
       return calculatePosition({ boardId, afterColumnId });
     }
-    return (target.position + next.position) / 2;
+    return target.position + Math.floor((next.position - target.position) / 2);
   }
 
-  // CASE 3 — APPEND
+  // if neither before nor after is provided, we append to the end of the board
   const last = await prisma.column.findFirst({
     where: { boardId },
     orderBy: { position: "desc" }
@@ -111,7 +125,7 @@ const calculatePosition = async ({
 };
 
 
-// 🔹 CREATE COLUMN (FINAL)
+//create column (only admin(global and project) can create)
 const createColumn = async (req, res) => {
   try {
     const { boardId } = req.params;
@@ -119,37 +133,35 @@ const createColumn = async (req, res) => {
     const userId = req.user.id;
 
     if (!name || !name.trim()) {
-      return res.status(400).json({
+    return res.status(400).json({
         success: false,
-        message: "Column name is required"
-      });
-    }
-
-    // 🔹 Get board
-    const board = await getBoardOrThrow(boardId);
-
-    // 🔹 Auth
-    await checkProjectMembership(userId, board.projectId);
-    await checkProjectAdmin(userId, board.projectId);
-
-    // 🔹 Human-friendly duplicate check
-    const existingColumns = await prisma.column.findMany({
-      where: { boardId },
-      select: { name: true }
+        message: "Name is required"
     });
-
-    const isDuplicate = existingColumns.some(
-      (col) => normalizeName(col.name) === normalizeName(name)
-    );
-
-    if (isDuplicate) {
-      return res.status(400).json({
-        success: false,
-        message: "A column with a similar name already exists in this board"
-      });
     }
 
-    // 🔹 Calculate position (safe)
+    //Get board
+    const board = await getBoard(boardId);
+    const projectId = board.projectId;
+    const member = await checkProjectMembership(projectId, userId);
+    if (!member) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not a member of this project"
+    });
+    }
+
+    const admin = await checkProjectAdmin(projectId, userId);
+    if (!admin) {
+    return res.status(403).json({
+        success: false,
+        message: "Only project admin can perform this action"
+    });
+    }
+    if (name !== undefined) {
+      await ensureUniqueColumnName(boardId, name);
+    }
+
+    //Calculate position
     let position;
     try {
       position = await calculatePosition({
@@ -164,7 +176,7 @@ const createColumn = async (req, res) => {
       });
     }
 
-    // 🔹 Create
+    //Create
     const column = await prisma.column.create({
       data: {
         name: name.trim(),
@@ -195,7 +207,7 @@ const createColumn = async (req, res) => {
 };
 
 
-// 🔹 GET COLUMNS
+//get columns by board (only project members can view)
 const getColumnsByBoard = async (req, res) => {
   try {
     const { boardId } = req.params;
@@ -213,7 +225,13 @@ const getColumnsByBoard = async (req, res) => {
       });
     }
 
-    await checkProjectMembership(userId, board.projectId);
+    const member = await checkProjectMembership(board.projectId, userId);
+    if (!member) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not a member of this project"
+    });
+    }
 
     const columns = await prisma.column.findMany({
       where: { boardId },
@@ -234,15 +252,15 @@ const getColumnsByBoard = async (req, res) => {
 };
 
 
-// 🔹 UPDATE COLUMN
+//update column (only admin(global and project) can update)
 const updateColumn = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { columnId } = req.params;
     const { name, position, wipLimit } = req.body;
     const userId = req.user.id;
 
     const column = await prisma.column.findUnique({
-      where: { id },
+      where: { id: columnId },
       include: {
         board: {
           select: { projectId: true }
@@ -256,16 +274,31 @@ const updateColumn = async (req, res) => {
         message: "Column not found"
       });
     }
-
+   
     const projectId = column.board.projectId;
 
-    await checkProjectMembership(userId, projectId);
-    await checkProjectAdmin(userId, projectId);
-
+    const admin = await checkProjectAdmin(projectId, userId);
+    if (!admin) {
+      return res.status(403).json({
+        success: false,
+        message: "Only project admin can perform this action"
+      });
+    }
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Column name cannot be empty"
+        });
+      }
+    }  
+    if (name !== undefined) {
+      await ensureUniqueColumnName(column.boardId, name, columnId);
+    }
     const updated = await prisma.column.update({
-      where: { id },
+      where: { id: columnId },
       data: {
-        name: name ?? column.name,
+        name: name !== undefined ? name.trim() : column.name,
         position: position ?? column.position,
         wipLimit: wipLimit ?? column.wipLimit
       }
@@ -285,14 +318,14 @@ const updateColumn = async (req, res) => {
 };
 
 
-// 🔹 DELETE COLUMN
+//delete column (only admin(global and project) can delete)
 const deleteColumn = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { columnId } = req.params;
     const userId = req.user.id;
 
     const column = await prisma.column.findUnique({
-      where: { id },
+      where: { id: columnId },
       include: {
         board: {
           select: { projectId: true }
@@ -311,9 +344,13 @@ const deleteColumn = async (req, res) => {
     }
 
     const projectId = column.board.projectId;
-
-    await checkProjectMembership(userId, projectId);
-    await checkProjectAdmin(userId, projectId);
+    const admin = await checkProjectAdmin(projectId, userId);
+    if (!admin) {
+      return res.status(403).json({
+        success: false,
+        message: "Only project admin can perform this action"
+      });
+    }
 
     // Restrict delete if tasks exist
     if (column.tasks.length > 0) {
@@ -324,7 +361,7 @@ const deleteColumn = async (req, res) => {
     }
 
     await prisma.column.delete({
-      where: { id }
+      where: { id: columnId }
     });
 
     return res.status(200).json({

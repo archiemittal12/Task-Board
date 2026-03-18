@@ -146,12 +146,13 @@ const updateBoard = async (req, res) => {
       }
     });
 
-    if (existing && existing.id !== id) {
+    if (existing && existing.id !== boardId) {
       return res.status(400).json({
         success: false,
         message: "Board name already exists"
       });
     }
+
 
     //Update
     const updatedBoard = await prisma.board.update({

@@ -177,6 +177,9 @@ const deleteProject = async (req, res) => {
         error: "Only admins can delete project"
       });
     }
+    await prisma.projectMember.deleteMany({
+      where: { projectId: id }
+    });
     await prisma.project.delete({
       where: { id }
     });
