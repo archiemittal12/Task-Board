@@ -170,22 +170,42 @@ const updateProject = async (req, res) => {
 const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
-    // check admin
     const isAdmin = await checkProjectAdmin(id, req.user.id);
     if (!isAdmin) {
       return res.status(403).json({
         error: "Only admins can delete project"
       });
     }
-    await prisma.projectMember.deleteMany({
-      where: { projectId: id }
-    });
-    await prisma.project.delete({
-      where: { id }
+    await prisma.$transaction(async (tx) => {
+      // delete tasks first because of foreign key constraint
+      await tx.task.deleteMany({
+        where: { projectId: id }
+      });
+      // delete columns
+      await tx.column.deleteMany({
+        where: {
+          board: {
+            projectId: id
+          }
+        }
+      });
+      // delete boards
+      await tx.board.deleteMany({
+        where: { projectId: id }
+      });
+      // delete members
+      await tx.projectMember.deleteMany({
+        where: { projectId: id }
+      });
+      // finally delete project
+      await tx.project.delete({
+        where: { id }
+      });
     });
     return res.status(200).json({
       message: "Project deleted successfully"
     });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({
