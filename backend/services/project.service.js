@@ -63,12 +63,10 @@ const getProjects = async (req, res) => {
         createdAt: "desc"
       }
     });
-
     return res.status(200).json({
       count: projects.length,
       projects
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({

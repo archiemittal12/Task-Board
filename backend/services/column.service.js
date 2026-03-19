@@ -25,6 +25,7 @@ const ensureUniqueColumnName = async (boardId, name, excludeId = null) => {
 
 //helper to get board and validate existence
 const getBoard= async (boardId) => {
+
   const board = await prisma.board.findUnique({
     where: { id: boardId },
     select: { id: true, projectId: true }
@@ -140,7 +141,15 @@ const createColumn = async (req, res) => {
     }
 
     //Get board
-    const board = await getBoard(boardId);
+    let board;
+        try {
+          board = await getBoard(boardId);
+        } catch (err) {
+          return res.status(404).json({
+            success: false,
+            message: err.message
+          });
+        }
     const projectId = board.projectId;
     const member = await checkProjectMembership(projectId, userId);
     if (!member) {
@@ -158,7 +167,14 @@ const createColumn = async (req, res) => {
     });
     }
     if (name !== undefined) {
-      await ensureUniqueColumnName(boardId, name);
+      try {
+            await ensureUniqueColumnName(boardId, name);
+          } catch (err) {
+            return res.status(400).json({
+              success: false,
+              message: err.message
+            });
+          }
     }
 
     //Calculate position
@@ -293,7 +309,14 @@ const updateColumn = async (req, res) => {
       }
     }  
     if (name !== undefined) {
-      await ensureUniqueColumnName(column.boardId, name, columnId);
+     try {
+          await ensureUniqueColumnName(column.boardId, name, columnId);
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            message: err.message
+          });
+        }
     }
     const updated = await prisma.column.update({
       where: { id: columnId },

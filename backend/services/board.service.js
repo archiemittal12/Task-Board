@@ -42,7 +42,7 @@ const createBoard = async (req, res) => {
     const existingBoard = await prisma.board.findFirst({
       where: {
         projectId,
-        name
+        name : name.trim().toLowerCase()
       }
     });
 
@@ -56,7 +56,7 @@ const createBoard = async (req, res) => {
     //Create board
     const board = await prisma.board.create({
       data: {
-        name,
+        name: name.trim().toLowerCase(),
         projectId
       }
     });
@@ -142,12 +142,17 @@ const updateBoard = async (req, res) => {
         message: "Only project admin can update board"
       });
     }
-
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Board name is required"
+      });
+    }
     //Unique name check
     const existing = await prisma.board.findFirst({
       where: {
         projectId: board.projectId,
-        name
+        name: name.trim().toLowerCase()
       }
     });
 
@@ -162,7 +167,7 @@ const updateBoard = async (req, res) => {
     //Update
     const updatedBoard = await prisma.board.update({
       where: { id: boardId },
-      data: { name }
+      data: { name: name.trim().toLowerCase() }
     });
 
     return res.status(200).json({
