@@ -175,7 +175,19 @@ const deleteProject = async (req, res) => {
       });
     }
     await prisma.$transaction(async (tx) => {
+      // get all task ids in this project first
+      const tasks = await tx.task.findMany({
+        where: { projectId: id },
+        select: { id: true }
+      });
+      const taskIds = tasks.map((t) => t.id);
+      // delete mentions, comments, audits first
+      await tx.mention.deleteMany({ where: { comment: { taskId: { in: taskIds } } } });
+      await tx.comment.deleteMany({ where: { taskId: { in: taskIds } } });
+      await tx.taskAudit.deleteMany({ where: { taskId: { in: taskIds } } });
+
       // delete tasks first because of foreign key constraint
+
       await tx.task.deleteMany({
         where: { projectId: id }
       });

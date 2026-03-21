@@ -42,7 +42,7 @@ const createBoard = async (req, res) => {
     const existingBoard = await prisma.board.findFirst({
       where: {
         projectId,
-        name : name.trim().toLowerCase()
+         name: { equals: name.trim(), mode: "insensitive" }
       }
     });
 
@@ -56,7 +56,7 @@ const createBoard = async (req, res) => {
     //Create board
     const board = await prisma.board.create({
       data: {
-        name: name.trim().toLowerCase(),
+        name: name.trim(),
         projectId
       }
     });
@@ -152,7 +152,7 @@ const updateBoard = async (req, res) => {
     const existing = await prisma.board.findFirst({
       where: {
         projectId: board.projectId,
-        name: name.trim().toLowerCase()
+         name: { equals: name.trim(), mode: "insensitive" }
       }
     });
 
@@ -167,7 +167,7 @@ const updateBoard = async (req, res) => {
     //Update
     const updatedBoard = await prisma.board.update({
       where: { id: boardId },
-      data: { name: name.trim().toLowerCase() }
+      data: { name: name.trim() }
     });
 
     return res.status(200).json({
@@ -206,6 +206,19 @@ const deleteBoard = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Only project admin can delete board"
+      });
+    }
+    // if a column has tasks then prevent deletion of board (to prevent orphan tasks)
+    const columnsWithTasks = await prisma.column.findFirst({
+      where: {
+        boardId,
+        tasks: { some: {} }
+      }
+    });
+    if (columnsWithTasks) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete board with existing tasks"
       });
     }
     await prisma.$transaction(async (tx) => {

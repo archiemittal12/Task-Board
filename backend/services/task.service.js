@@ -745,7 +745,7 @@ const updateTask = async (req, res) => {
         notifications.push({
           userId: assigneeId,
           type: "TASK_ASSIGNED",
-          message: `You have been assigned to task: "${task.title}"`
+          message: `You have been assigned to task: "${updated.title}"`
         });
       }
 
@@ -754,7 +754,7 @@ const updateTask = async (req, res) => {
         notifications.push({
           userId: task.assigneeId,
           type: "TASK_ASSIGNED",
-          message: `You have been unassigned from task: "${task.title}"`
+          message: `You have been unassigned from task: "${updated.title}"`
         });
       }
 
@@ -892,14 +892,25 @@ const deleteTask = async (req, res) => {
       });
     }
 
-    await prisma.$transaction([
-      prisma.task.deleteMany({
-        where: { parentId: taskId }   // delete children
-      }),
-      prisma.task.delete({
-        where: { id: taskId }         // delete parent
-      })
-    ]);
+   
+    await prisma.$transaction(async (tx) => {
+      // get all child task ids first
+      const children = await tx.task.findMany({
+        where: { parentId: taskId },
+        select: { id: true }
+      });
+      const childIds = children.map((c) => c.id);
+      const allIds = [...childIds, taskId];
+
+      // delete mentions and audits for all tasks (children + parent)
+      await tx.mention.deleteMany({ where: { comment: { taskId: { in: allIds } } } });
+      await tx.comment.deleteMany({ where: { taskId: { in: allIds } } });
+      await tx.taskAudit.deleteMany({ where: { taskId: { in: allIds } } });
+
+      // now safe to delete tasks
+      await tx.task.deleteMany({ where: { parentId: taskId } });
+      await tx.task.delete({ where: { id: taskId } });
+    });
 
     return res.status(200).json({
       success: true,

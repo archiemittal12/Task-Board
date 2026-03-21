@@ -176,6 +176,14 @@ const createColumn = async (req, res) => {
             });
           }
     }
+    if (wipLimit !== undefined && wipLimit !== null) {
+      if (!Number.isInteger(wipLimit) || wipLimit < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "WIP limit must be a positive integer"
+        });
+      }
+    }
 
     //Calculate position
     let position;
@@ -317,6 +325,14 @@ const updateColumn = async (req, res) => {
             message: err.message
           });
         }
+    }
+    if (wipLimit !== undefined && wipLimit !== null) {
+      if (!Number.isInteger(wipLimit) || wipLimit < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "WIP limit must be a positive integer"
+        });
+      }
     }
     const updated = await prisma.column.update({
       where: { id: columnId },
