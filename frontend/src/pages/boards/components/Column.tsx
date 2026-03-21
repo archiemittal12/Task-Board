@@ -1,12 +1,24 @@
 import TaskCard from "./TaskCard";
+import type { ColumnType, Story, Task } from "../types";
+
+type ColumnProps = {
+  column: ColumnType;
+  onTaskClick: (task: Task) => void;
+  onAddTask: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  storyTitleById: Record<number, string>;
+};
 
 export default function Column({
   column,
   onTaskClick,
   onAddTask,
-}: any) {
-  // 🎨 ICON STYLE
-  const iconStyle = {
+  onRename,
+  onDelete,
+  storyTitleById,
+}: ColumnProps) {
+  const iconButtonStyle = {
     background: "linear-gradient(135deg, #6366f1, #4f46e5)",
     border: "none",
     borderRadius: 10,
@@ -18,95 +30,92 @@ export default function Column({
     justifyContent: "center",
     fontSize: 14,
     transition: "0.2s",
-  };
+  } as const;
 
   return (
     <div
-      className="column"
       style={{
-        minWidth: 280,
+        minWidth: 300,
         background: "#f8fafc",
-        borderRadius: 14,
-        padding: 12,
-        boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+        borderRadius: 16,
+        padding: 14,
+        boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
+        border: "1px solid #e2e8f0",
       }}
     >
-      {/* 🔥 COLUMN HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 12,
+          gap: 10,
         }}
       >
-        <h3 style={{ fontSize: 18 }}>{column.title}</h3>
+        <h3 style={{ fontSize: 18, margin: 0 }}>{column.title}</h3>
 
-        {/* 🎯 ACTION BUTTONS */}
         <div style={{ display: "flex", gap: 6 }}>
-          {/* ✏️ RENAME */}
           <button
-            style={iconStyle}
             title="Rename Column"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "scale(1.1)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "scale(1)")
-            }
-            onClick={() => alert("Rename Column (UI later)")}
+            style={iconButtonStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            onClick={onRename}
           >
             ✏️
           </button>
 
-          {/* 🗑 DELETE */}
           <button
-            style={iconStyle}
             title="Delete Column"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "scale(1.1)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "scale(1)")
-            }
-            onClick={() => alert("Delete Column (logic later)")}
+            style={iconButtonStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            onClick={onDelete}
           >
             🗑
           </button>
         </div>
       </div>
 
-      {/* 📌 TASK LIST */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {column.tasks.map((task: any) => (
+      <div style={{ display: "grid", gap: 10 }}>
+        {column.tasks.map((task) => (
           <TaskCard
             key={task.id}
             task={task}
+            storyTitle={storyTitleById[task.storyId] || "No Story"}
             onClick={() => onTaskClick(task)}
           />
         ))}
       </div>
 
-      {/* ➕ ADD TASK */}
       <button
         onClick={onAddTask}
         style={{
           marginTop: 12,
           width: "100%",
-          padding: "10px",
-          borderRadius: 10,
-          border: "none",
-          background: "#e2e8f0",
+          padding: "10px 12px",
+          borderRadius: 12,
+          border: "1px solid #cbd5e1",
+          background: "#eef2ff",
+          color: "#4338ca",
           cursor: "pointer",
-          fontWeight: 500,
+          fontWeight: 700,
           transition: "0.2s",
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.background = "#cbd5f5")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.background = "#e2e8f0")
-        }
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#dbe4ff";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#eef2ff";
+        }}
       >
         + Add Task
       </button>
