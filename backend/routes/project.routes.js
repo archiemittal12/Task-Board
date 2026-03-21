@@ -10,6 +10,7 @@ const {
 } = require("../services/project.service");
 const authMiddleware = require("../middleware/auth.middleware");
 const boardRoutes = require("./board.routes");
+const storyRoutes = require("./story.routes");
 router.use(authMiddleware);
 
 // project APIs
@@ -21,5 +22,6 @@ router.delete("/:id", deleteProject);
 
 // nested board routes
 router.use("/:projectId/boards", boardRoutes);
+router.use("/:projectId/stories", storyRoutes);
 
 module.exports = router;

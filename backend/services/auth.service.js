@@ -4,10 +4,10 @@ const generateToken = require('../utils/generateToken');
 
 const register = async (req, res) => {
   try{  
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
+  const { name, email, password, username } = req.body;
+  if (!name || !email || !password || !username) {
       return res.status(400).json({
-        message: 'Name, email and password are required',
+        message: 'Name, email, username and password are required',
       });
     }
   // first we will check if the user already exists with the given email
@@ -15,9 +15,18 @@ const register = async (req, res) => {
     where: { email: email },
   });
 
- if (existingUser) {
-  return res.status(400).json({message: 'User already exists with this email', });
-}
+  if (existingUser) {
+    return res.status(400).json({ message: 'User already exists with this email' });
+  }
+
+  // check username uniqueness
+  const existingUsername = await prisma.user.findUnique({
+    where: { username: username.trim().toLowerCase() },
+  });
+
+  if (existingUsername) {
+    return res.status(400).json({ message: 'Username already taken' });
+  }
 
   // now hashing the password 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -28,16 +37,18 @@ const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      username: username.trim().toLowerCase(),
     },
   });
-   // once registered we will generate a token and user will be automcatically logged in
+   // once registered we will generate a token and user will be automatically logged in
    const token = generateToken(user.id);
    return res.status(201).json({
       token,
       user: {
         id: user.id,
-        name : user.name,
+        name: user.name,
         email: user.email,
+        username: user.username,
       },
     });
 } 
@@ -79,14 +90,15 @@ const login = async (req, res) => {
     });
   }
 
-  // to maintain consistency with the register , here also we will generate a token and return the user info
+  // to maintain consistency with the register, here also we will generate a token and return the user info
   const token = generateToken(user.id);
    return res.status(200).json({
       token,
       user: {
         id: user.id,
-        name : user.name,
+        name: user.name,
         email: user.email,
+        username: user.username,
       },
     });
 }
@@ -97,4 +109,4 @@ catch (error) {
     });
   }
 };
-module.exports = {register,login};
+module.exports = { register, login };
