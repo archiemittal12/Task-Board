@@ -48,6 +48,7 @@ enum NotificationType {
 model User {
   id           String      @id @default(uuid())
   email        String      @unique
+  username   String         @unique   
   password     String
   name         String
   avatarUrl    String?
@@ -59,6 +60,7 @@ model User {
   tasksReported Task[]  @relation("TaskReporter")
   comments     Comment[]
   notifications Notification[]
+  mentions Mention[]
 }
 
 model Project {
@@ -106,8 +108,8 @@ model Task {
   title       String
   description String?
   type        TaskType
-  status      TaskStatus
   priority    TaskPriority
+  position    Int?
   dueDate     DateTime?
   projectId   String
   columnId    String?
@@ -116,8 +118,7 @@ model Task {
   reporterId  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  resolvedAt  DateTime?
-  closedAt    DateTime?
+  completedAt DateTime?  
   project     Project @relation(fields: [projectId], references: [id])
   column      Column? @relation(fields: [columnId], references: [id])
   parent      Task?   @relation("TaskHierarchy", fields: [parentId], references: [id])
@@ -126,6 +127,9 @@ model Task {
   reporter    User? @relation("TaskReporter", fields: [reporterId], references: [id])
   comments    Comment[]
   auditLogs   TaskAudit[]
+  @@index([projectId])
+  @@index([columnId])
+  @@index([assigneeId])
 }
 
 model Comment {
@@ -137,6 +141,7 @@ model Comment {
   updatedAt DateTime @updatedAt
   task      Task @relation(fields: [taskId], references: [id])
   user      User @relation(fields: [userId], references: [id])
+  mentions Mention[]
 }
 
 model TaskAudit {
@@ -158,4 +163,14 @@ model Notification {
   read      Boolean @default(false)
   createdAt DateTime @default(now())
   user      User @relation(fields: [userId], references: [id])
+}
+model Mention {
+  id        String  @id @default(uuid())
+  commentId String
+  userId    String
+
+  comment   Comment @relation(fields: [commentId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
 }

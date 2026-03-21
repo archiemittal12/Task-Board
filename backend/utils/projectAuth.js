@@ -21,8 +21,23 @@ const checkProjectAdmin = async (projectId, userId) => {
   }
   return null;
 };
+// check write access (admin and editor have write access, viewer does not)
+const checkProjectWriteAccess = async (projectId, userId) => {
+  const member = await prisma.projectMember.findUnique({
+    where: {
+      projectId_userId: { projectId, userId }
+    }
+  });
+
+  if (!member) return null;
+
+  if (member.role === "VIEWER") return null;
+
+  return member;
+};
 
 module.exports = {
   checkProjectMembership,
-  checkProjectAdmin
+  checkProjectAdmin,
+  checkProjectWriteAccess
 };
