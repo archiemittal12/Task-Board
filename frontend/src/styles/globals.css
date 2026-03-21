@@ -43,19 +43,18 @@ body {
 }
 
 .auth-card {
-  width: 350px;
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 380px;
+  padding: 35px;
 }
 
-.auth-form input {
+.auth-form button {
   width: 100%;
   padding: 12px;
-  margin-bottom: 12px;
+  margin-top: 10px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: #6366f1;
+  color: white;
+  font-weight: 600;
 }
 
 /* Layout */
@@ -310,4 +309,54 @@ button:hover {
   height: 10px;
   background: #6366f1;
   border-radius: 50%;
+}
+.column-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.column-actions button {
+  background: #eef2ff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.column-actions button:hover {
+  background: #6366f1;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.board-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.board-actions button {
+  background: #6366f1;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.default-columns {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.default-columns label {
+  font-size: 14px;
 }
