@@ -133,6 +133,11 @@ const calculatePosition = async ({
   return getLastPosition(columnId);
 };
 
+const logAudit = async ({ taskId, field, oldValue, newValue, userId }) => {
+  await prisma.taskAudit.create({
+    data: { taskId, field, oldValue, newValue, userId }
+  });
+};
 
 // this function will create a story, it is separate from createTask because story has different rules than task and bug
 const createStory = async (req, res) => {
@@ -383,6 +388,16 @@ const createWorkItem = async (req, res) => {
         position
       }
     });
+    // notify assignee if one was set and they are not the creator
+    if (assigneeId && assigneeId !== userId) {
+      await prisma.notification.create({
+        data: {
+          userId: assigneeId,
+          type: "TASK_ASSIGNED",
+          message: `You have been assigned to task: "${task.title}"`
+        }
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -496,7 +511,16 @@ const moveTask = async (req, res) => {
         position
       }
     });
-
+    // log column change as a status change
+    if (targetColumnId !== task.columnId) {
+      await logAudit({
+        taskId,
+        field: "columnId",
+        oldValue: task.columnId ?? null,
+        newValue: targetColumnId,
+        userId
+      });
+    }
     return res.status(200).json({
       success: true,
       data: updated
@@ -681,6 +705,64 @@ const updateTask = async (req, res) => {
       }
     });
 
+    // log only meaningful field changes(priority, dueDate, assignee) to audit log, title and description changes are not logged for simplicity, also we are not logging column changes here as that will be handled in move endpoint, we are also not logging story changes as they have a separate update endpoint
+    if (priority && priority !== task.priority) {
+      await logAudit({
+        taskId,
+        field: "priority",
+        oldValue: task.priority,
+        newValue: priority,
+        userId
+      });
+    }
+
+    if (assigneeId !== undefined && assigneeId !== task.assigneeId) {
+      await logAudit({
+        taskId,
+        field: "assigneeId",
+        oldValue: task.assigneeId ?? null,
+        newValue: assigneeId ?? null,
+        userId
+      });
+    }
+
+    if (dueDate !== undefined && dueDate !== task.dueDate?.toISOString()) {
+      await logAudit({
+        taskId,
+        field: "dueDate",
+        oldValue: task.dueDate ? task.dueDate.toISOString() : null,
+        newValue: dueDate ?? null,
+        userId
+      });
+    }
+    // if assignee changed, notify the new assignee and the old one
+    const assigneeChanged = assigneeId !== undefined && assigneeId !== task.assigneeId;
+    if (assigneeChanged) {
+      const notifications = [];
+
+      // notify newly assigned user (skip if they assigned themselves)
+      if (assigneeId && assigneeId !== userId) {
+        notifications.push({
+          userId: assigneeId,
+          type: "TASK_ASSIGNED",
+          message: `You have been assigned to task: "${task.title}"`
+        });
+      }
+
+      // notify old assignee they were unassigned (skip if they made the change)
+      if (task.assigneeId && task.assigneeId !== userId) {
+        notifications.push({
+          userId: task.assigneeId,
+          type: "TASK_ASSIGNED",
+          message: `You have been unassigned from task: "${task.title}"`
+        });
+      }
+
+      if (notifications.length > 0) {
+        await prisma.notification.createMany({ data: notifications });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: updated
@@ -752,6 +834,25 @@ const updateStory = async (req, res) => {
         parentId: null
       }
     });
+    if (priority && priority !== story.priority) {
+        await logAudit({
+          taskId: storyId,
+          field: "priority",
+          oldValue: story.priority,
+          newValue: priority,
+          userId
+        });
+    }
+
+    if (dueDate !== undefined && dueDate !== story.dueDate?.toISOString()) {
+        await logAudit({
+          taskId: storyId,
+          field: "dueDate",
+          oldValue: story.dueDate ? story.dueDate.toISOString() : null,
+          newValue: dueDate ?? null,
+          userId
+        });
+    }
 
     return res.status(200).json({
       success: true,
