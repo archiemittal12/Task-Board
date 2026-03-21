@@ -121,9 +121,25 @@ const createComment = async (req, res) => {
         newValue: content.trim(),
         userId
       });
+      // notify assignee and reporter about the new comment,skip if they are the one who made the comment
+      const notifyUserIds = [task.assigneeId, task.reporterId]
+        .filter((id) => id && id !== userId);
+        
+      // deduplicate in case assignee and reporter are same person
+      const uniqueUserIds = [...new Set(notifyUserIds)];
 
+      if (uniqueUserIds.length > 0) {
+        await tx.notification.createMany({
+          data: uniqueUserIds.map((id) => ({
+            userId: id,
+            type: "COMMENT_ADDED",
+            message: `A new comment was added on task: "${task.title}"`
+          }))
+        });
+      }
       return newComment;
     });
+
 
     return res.status(201).json({
       success: true,
