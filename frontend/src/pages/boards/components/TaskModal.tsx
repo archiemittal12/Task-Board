@@ -372,14 +372,23 @@ function CommentItem({
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: "#6366f1", color: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700, flexShrink: 0
-          }}>
-            {(comment.user?.name || "U")[0].toUpperCase()}
-          </div>
+         <div style={{
+          width: 28, height: 28, borderRadius: "50%",
+          background: "#6366f1", color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 12, fontWeight: 700, flexShrink: 0,
+          overflow: "hidden",
+        }}>
+          {comment.user?.avatarUrl ? (
+            <img
+              src={`http://localhost:3000${comment.user.avatarUrl}`}
+              alt={comment.user.name}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            (comment.user?.name || "U")[0].toUpperCase()
+          )}
+        </div>
           <div>
             <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
               {comment.user?.name || "Unknown"}

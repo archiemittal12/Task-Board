@@ -6,6 +6,8 @@ interface User {
   id: string;
   email: string;
   username: string;
+  name?: string;
+  avatarUrl?: string | null;
 }
 
 interface AuthContextType {
@@ -14,6 +16,7 @@ interface AuthContextType {
   login: (userData: User, token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +24,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-
+  const updateUser = (userData: Partial<User>) => {
+  setUser(prev => {
+    if (!prev) return prev;
+    const updated = { ...prev, ...userData };
+    localStorage.setItem('user', JSON.stringify(updated));
+    return updated;
+  });
+  };  
   // Load state from localStorage on initial mount
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -48,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );
