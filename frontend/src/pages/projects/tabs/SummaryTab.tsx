@@ -1,17 +1,21 @@
-export default function SummaryTab({
-  createdAt = "20 March 2026",
-  updatedAt = "21 March 2026",
-}: any) {
+export default function SummaryTab({ createdAt, updatedAt }: { createdAt: string, updatedAt: string }) {
+  // Format the ISO date strings to readable dates
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <div>
-      {/* 🔥 TITLE */}
-      <h3 style={{ marginBottom: "10px" }}>Project Overview</h3>
-
+      <h3 style={{ marginBottom: "10px", fontSize: "20px" }}>Project Overview</h3>
       <p style={{ color: "#64748b", marginBottom: "20px" }}>
         This section shows project statistics and activity.
       </p>
 
-      {/* 🔥 TOP SECTION (PROJECT INFO) */}
+      {/* PROJECT INFO */}
       <div
         style={{
           background: "#ffffff",
@@ -21,76 +25,30 @@ export default function SummaryTab({
           marginBottom: "20px",
         }}
       >
-        <h4 style={{ marginBottom: "10px" }}>Project Info</h4>
-
-        <p>
-          <strong>Created At:</strong> {createdAt}
-        </p>
-
-        <p>
-          <strong>Last Updated:</strong> {updatedAt}
-        </p>
+        <h4 style={{ marginBottom: "10px" }}>Project Timeline</h4>
+        <p style={{ margin: "5px 0" }}><strong>Created At:</strong> {formatDate(createdAt)}</p>
+        <p style={{ margin: "5px 0" }}><strong>Last Updated:</strong> {formatDate(updatedAt)}</p>
       </div>
 
-      {/* 🔥 STATS SECTION */}
+      {/* STATS SECTION (Currently Dummy Data) */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(180px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           gap: "20px",
         }}
       >
-        {/* TASKS */}
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "18px",
-            borderRadius: "14px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            textAlign: "center",
-          }}
-        >
-          <h4 style={{ marginBottom: "5px" }}>Tasks</h4>
-          <p style={{ fontSize: "22px", fontWeight: "700" }}>
-            24
-          </p>
+        <div style={{ background: "#ffffff", padding: "18px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)", textAlign: "center" }}>
+          <h4 style={{ marginBottom: "5px", color: "#64748b" }}>Tasks</h4>
+          <p style={{ fontSize: "24px", fontWeight: "700", margin: 0 }}>24</p>
         </div>
-
-        {/* IN PROGRESS */}
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "18px",
-            borderRadius: "14px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            textAlign: "center",
-          }}
-        >
-          <h4 style={{ marginBottom: "5px" }}>
-            In Progress
-          </h4>
-          <p style={{ fontSize: "22px", fontWeight: "700" }}>
-            8
-          </p>
+        <div style={{ background: "#ffffff", padding: "18px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)", textAlign: "center" }}>
+          <h4 style={{ marginBottom: "5px", color: "#64748b" }}>In Progress</h4>
+          <p style={{ fontSize: "24px", fontWeight: "700", margin: 0 }}>8</p>
         </div>
-
-        {/* COMPLETED */}
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "18px",
-            borderRadius: "14px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            textAlign: "center",
-          }}
-        >
-          <h4 style={{ marginBottom: "5px" }}>
-            Completed
-          </h4>
-          <p style={{ fontSize: "22px", fontWeight: "700" }}>
-            12
-          </p>
+        <div style={{ background: "#ffffff", padding: "18px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)", textAlign: "center" }}>
+          <h4 style={{ marginBottom: "5px", color: "#64748b" }}>Completed</h4>
+          <p style={{ fontSize: "24px", fontWeight: "700", margin: 0 }}>12</p>
         </div>
       </div>
     </div>

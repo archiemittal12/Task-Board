@@ -59,6 +59,14 @@ const getProjects = async (req, res) => {
           }
         }
       },
+      include: {
+        boards: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
       orderBy: {
         createdAt: "desc"
       }
@@ -125,10 +133,13 @@ const getProjectById = async (req, res) => {
 
 
 //update project (only admin can update)
+// backend/services/project.service.js
+
 const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
+    // 1. Destructure isArchived from req.body
+    const { name, description, isArchived } = req.body; 
 
     // check admin
     const isAdmin = await checkProjectAdmin(id, req.user.id);
@@ -137,6 +148,7 @@ const updateProject = async (req, res) => {
         error: "Only admins can update project"
       });
     }
+    
     const data = {};
     if (name !== undefined) {
       data.name = name;
@@ -144,9 +156,14 @@ const updateProject = async (req, res) => {
     if (description !== undefined) {
       data.description = description;
     }
+    // 2. Add isArchived to the update data if provided
+    if (isArchived !== undefined) {
+      data.isArchived = isArchived;
+    }
+
     const project = await prisma.project.update({
       where: { id },
-        data
+      data
     });
 
     return res.status(200).json({
