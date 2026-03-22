@@ -14,16 +14,17 @@ export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* DEFAULT ROUTE */}
+                {/* DEFAULT ROUTE → LOGIN */}
                 <Route path="/" element={<LoginPage />} />
 
+                {/* AUTH ROUTES */}
                 <Route element={<AuthLayout />}>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                 </Route>
 
+                {/* APP ROUTES */}
                 <Route element={<AppLayout />}>
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/projects" element={<ProjectsPage />} />
                     <Route path="/projects/:id" element={<ProjectDetailPage />} />

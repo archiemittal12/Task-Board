@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "nodemon index.js",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
