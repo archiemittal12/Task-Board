@@ -569,6 +569,21 @@ const moveTask = async (req, res) => {
         status: targetColumn.status
       }
     });
+    if (targetColumnId !== task.columnId) {
+      const notifyIds = [task.assigneeId, task.reporterId]
+        .filter((id) => id && id !== userId);
+      const uniqueIds = [...new Set(notifyIds)];
+
+      if (uniqueIds.length > 0) {
+        await prisma.notification.createMany({
+          data: uniqueIds.map((id) => ({
+            userId: id,
+            type: "TASK_STATUS_CHANGED",
+            message: `Task "${task.title}" moved to ${targetColumn.name}`
+          }))
+        });
+      }
+    }
 
     // if task has a parent story, recalculate story status
     if (task.parentId) {
@@ -743,11 +758,19 @@ const updateTask = async (req, res) => {
             });
         } 
     }
-    const member = await checkProjectWriteAccess(task.projectId, userId);
+   const member = await checkProjectWriteAccess(task.projectId, userId);
     if (!member) {
+      return res.status(403).json({ success: false, message: "Not allowed" });
+    }
+
+    // Only assignee or project admin can edit
+    const isAdmin = await checkProjectAdmin(task.projectId, userId);
+    const isAssignee = task.assigneeId === userId;
+
+    if (!isAdmin && !isAssignee) {
       return res.status(403).json({
         success: false,
-        message: "Not allowed to update task"
+        message: "Only the task assignee or a project admin can edit this task"
       });
     }
     if (title !== undefined && !title.trim()) {
@@ -862,11 +885,11 @@ const updateStory = async (req, res) => {
       });
     }
 
-    const member = await checkProjectWriteAccess(story.projectId, userId);
-    if (!member) {
+   const admin = await checkProjectAdmin(story.projectId, userId);
+    if (!admin) {
       return res.status(403).json({
         success: false,
-        message: "Not allowed to update story"
+        message: "Only project admins can edit stories"
       });
     }
 

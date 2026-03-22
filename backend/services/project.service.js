@@ -14,6 +14,17 @@ const createProject = async (req, res) => {
         error: "Project name is required"
       });
     }
+    // Only global admins can create projects
+    const requestingUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { globalRole: true }
+    });
+
+    if (requestingUser?.globalRole !== "ADMIN") {
+      return res.status(403).json({
+        error: "Only Global Admins can create projects"
+      });
+    }
     const project = await prisma.project.create({
       data: {
         name,

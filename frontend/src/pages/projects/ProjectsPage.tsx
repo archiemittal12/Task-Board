@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import apiClient from "../../api/client";
-
+import { useAuth } from "../../context/AuthContext";
 // Ensure IDs are strings and include isArchived
 type Project = {
   id: string;
@@ -13,7 +13,7 @@ type Project = {
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +26,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await apiClient.get('/projects');
+        const response = await apiClient.get("/projects");
         setProjects(response.data.projects);
       } catch (error) {
         console.error("Failed to fetch projects:", error);
@@ -43,7 +43,7 @@ export default function ProjectsPage() {
     if (!name.trim()) return;
 
     try {
-      const response = await apiClient.post('/projects', {
+      const response = await apiClient.post("/projects", {
         name,
         description: desc,
       });
@@ -67,12 +67,8 @@ export default function ProjectsPage() {
 
     try {
       await apiClient.put(`/projects/${id}`, { name: newName });
-      
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, name: newName } : p
-        )
-      );
+
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: newName } : p)));
     } catch (error: any) {
       console.error("Failed to update project:", error);
       if (error.response?.status === 403) {
@@ -92,11 +88,9 @@ export default function ProjectsPage() {
 
     try {
       await apiClient.put(`/projects/${id}`, { isArchived: !currentStatus });
-      
+
       setProjects((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, isArchived: !currentStatus } : p
-        )
+        prev.map((p) => (p.id === id ? { ...p, isArchived: !currentStatus } : p))
       );
     } catch (error: any) {
       console.error(`Failed to ${action} project:`, error);
@@ -111,12 +105,14 @@ export default function ProjectsPage() {
   // ✅ PERMANENT DELETE PROJECT
   const deleteProject = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const confirmDelete = window.confirm("Are you sure you want to permanently delete this project? This action cannot be undone.");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to permanently delete this project? This action cannot be undone."
+    );
     if (!confirmDelete) return;
 
     try {
       await apiClient.delete(`/projects/${id}`);
-      
+
       setProjects((prev) => prev.filter((p) => p.id !== id));
     } catch (error: any) {
       console.error("Failed to delete project:", error);
@@ -145,20 +141,22 @@ export default function ProjectsPage() {
       >
         <h1 style={{ fontSize: "30px", fontWeight: "700" }}>Projects</h1>
 
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            background: "#6366f1",
-            color: "white",
-            padding: "10px 18px",
-            borderRadius: "10px",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: "600",
-          }}
-        >
-          + Create Project
-        </button>
+        {user?.globalRole === "ADMIN" && (
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              background: "#6366f1",
+              color: "white",
+              padding: "10px 18px",
+              borderRadius: "10px",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "600",
+            }}
+          >
+            + Create Project
+          </button>
+        )}
       </div>
 
       {/* 🔥 GRID */}
@@ -202,7 +200,9 @@ export default function ProjectsPage() {
               }}
             >
               {/* NAME */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
                 <h3 style={{ margin: 0 }}>{p.name}</h3>
                 {/* STATUS BADGE */}
                 <span
@@ -225,7 +225,7 @@ export default function ProjectsPage() {
                   fontSize: "14px",
                   color: "#64748b",
                   margin: 0,
-                  flex: 1, 
+                  flex: 1,
                 }}
               >
                 {p.description || "No description provided."}
@@ -251,7 +251,7 @@ export default function ProjectsPage() {
                     color: "white",
                     fontWeight: "500",
                     cursor: p.isArchived ? "not-allowed" : "pointer",
-                    fontSize: "13px"
+                    fontSize: "13px",
                   }}
                 >
                   Rename
@@ -268,7 +268,7 @@ export default function ProjectsPage() {
                     color: "white",
                     fontWeight: "500",
                     cursor: "pointer",
-                    fontSize: "13px"
+                    fontSize: "13px",
                   }}
                 >
                   {p.isArchived ? "Unarchive" : "Archive"}
@@ -285,7 +285,7 @@ export default function ProjectsPage() {
                     color: "white",
                     fontWeight: "500",
                     cursor: "pointer",
-                    fontSize: "13px"
+                    fontSize: "13px",
                   }}
                 >
                   Delete
@@ -296,21 +296,24 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* 🔥 CREATE MODAL */}
+      {/*  CREATE MODAL */}
       {showModal && (
-        <div 
+        <div
           className="modal-overlay"
           style={{
             position: "fixed",
-            top: 0, left: 0, right: 0, bottom: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             background: "rgba(0,0,0,0.5)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000
+            zIndex: 1000,
           }}
         >
-          <div 
+          <div
             className="modal"
             style={{
               background: "white",
@@ -320,7 +323,7 @@ export default function ProjectsPage() {
               maxWidth: "400px",
               display: "flex",
               flexDirection: "column",
-              gap: "16px"
+              gap: "16px",
             }}
           >
             <h2 style={{ margin: 0 }}>Create Project</h2>
@@ -336,7 +339,12 @@ export default function ProjectsPage() {
               placeholder="Description"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              style={{ padding: "10px", borderRadius: "6px", border: "1px solid #ccc", minHeight: "80px" }}
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                minHeight: "80px",
+              }}
             />
 
             <div
@@ -344,19 +352,32 @@ export default function ProjectsPage() {
                 display: "flex",
                 gap: 10,
                 marginTop: 10,
-                justifyContent: "flex-end"
+                justifyContent: "flex-end",
               }}
             >
-              <button 
+              <button
                 onClick={() => setShowModal(false)}
-                style={{ padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", background: "#e2e8f0" }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: "#e2e8f0",
+                }}
               >
                 Cancel
               </button>
 
-              <button 
+              <button
                 onClick={createProject}
-                style={{ padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", background: "#6366f1", color: "white" }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: "#6366f1",
+                  color: "white",
+                }}
               >
                 Create
               </button>

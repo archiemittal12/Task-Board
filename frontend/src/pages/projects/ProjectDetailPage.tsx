@@ -133,7 +133,12 @@ export default function ProjectDetailPage() {
               placeholder="Username to assign..."
               value={newMemberUsername}
               onChange={(e) => setNewMemberUsername(e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", width: "250px" }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid #e2e8f0",
+                width: "250px",
+              }}
             />
             <select
               value={newMemberRole}
@@ -153,7 +158,7 @@ export default function ProjectDetailPage() {
                 borderRadius: "8px",
                 border: "none",
                 cursor: "pointer",
-                fontWeight: "500"
+                fontWeight: "500",
               }}
             >
               + Assign User
@@ -186,22 +191,26 @@ export default function ProjectDetailPage() {
       {/* 🌟 CONTENT */}
       <div>
         {activeTab === "summary" && (
-          <SummaryTab projectId={project.id} createdAt={project.createdAt} updatedAt={project.updatedAt} />
+          <SummaryTab
+            projectId={project.id}
+            createdAt={project.createdAt}
+            updatedAt={project.updatedAt}
+          />
         )}
 
         {activeTab === "boards" && (
-          <BoardsTab 
-            projectId={project.id} 
-            boards={project.boards} 
-            isAdmin={isAdmin} 
-            refreshProject={fetchProject} 
+          <BoardsTab
+            projectId={project.id}
+            boards={project.boards}
+            isAdmin={isAdmin}
+            refreshProject={fetchProject}
           />
         )}
 
         {activeTab === "members" && (
-          <MembersTab 
-            projectId={project.id} 
-            members={project.members} 
+          <MembersTab
+            projectId={project.id}
+            members={project.members}
             isAdmin={isAdmin}
             refreshProject={fetchProject}
           />

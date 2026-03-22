@@ -20,9 +20,18 @@ type ColumnProps = {
 };
 
 export default function Column({
-  column, onTaskClick, onAddTask, onRename, onDelete,
-  storyTitleById, onTaskDragStart, onTaskDrop,
-  onColumnDragStart, onColumnDragOver, onColumnDrop, isDragOverColumn,
+  column,
+  onTaskClick,
+  onAddTask,
+  onRename,
+  onDelete,
+  storyTitleById,
+  onTaskDragStart,
+  onTaskDrop,
+  onColumnDragStart,
+  onColumnDragOver,
+  onColumnDrop,
+  isDragOverColumn,
 }: ColumnProps) {
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
   const [dragOverPosition, setDragOverPosition] = useState<"above" | "below">("below");
@@ -30,8 +39,12 @@ export default function Column({
 
   const iconButtonStyle: React.CSSProperties = {
     background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-    border: "none", borderRadius: 10, padding: "8px 10px",
-    color: "white", cursor: "pointer", fontSize: 14,
+    border: "none",
+    borderRadius: 10,
+    padding: "8px 10px",
+    color: "white",
+    cursor: "pointer",
+    fontSize: 14,
   };
 
   const handleTaskDragOverBody = (e: React.DragEvent) => {
@@ -101,7 +114,14 @@ export default function Column({
       }}
     >
       {/* COLUMN HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 12,
+        }}
+      >
         <div>
           <h3 style={{ fontSize: 17, margin: 0, fontWeight: 700 }}>{column.title}</h3>
           {column.wipLimit && (
@@ -111,8 +131,12 @@ export default function Column({
           )}
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button style={iconButtonStyle} onClick={onRename} title="Rename">✏️</button>
-          <button style={iconButtonStyle} onClick={onDelete} title="Delete">🗑</button>
+          <button style={iconButtonStyle} onClick={onRename} title="Rename">
+            ✏️
+          </button>
+          <button style={iconButtonStyle} onClick={onDelete} title="Delete">
+            🗑
+          </button>
         </div>
       </div>
 
@@ -122,7 +146,9 @@ export default function Column({
         onDragLeave={() => setIsDragOverBody(false)}
         onDrop={handleTaskDropOnBody}
         style={{
-          display: "grid", gap: 10, minHeight: 40,
+          display: "grid",
+          gap: 10,
+          minHeight: 40,
           background: isDragOverBody ? "#e0e7ff" : "transparent",
           borderRadius: 8,
           transition: "background 0.15s",
@@ -171,13 +197,19 @@ export default function Column({
       <button
         onClick={onAddTask}
         style={{
-          marginTop: 12, width: "100%", padding: "10px 12px",
-          borderRadius: 12, border: "1px solid #cbd5e1",
-          background: "#eef2ff", color: "#4338ca",
-          cursor: "pointer", fontWeight: 700, fontSize: 14,
+          marginTop: 12,
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 12,
+          border: "1px solid #cbd5e1",
+          background: "#eef2ff",
+          color: "#4338ca",
+          cursor: "pointer",
+          fontWeight: 700,
+          fontSize: 14,
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = "#dbe4ff")}
-        onMouseLeave={e => (e.currentTarget.style.background = "#eef2ff")}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "#dbe4ff")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "#eef2ff")}
       >
         + Add Task
       </button>
