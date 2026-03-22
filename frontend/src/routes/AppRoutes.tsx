@@ -28,7 +28,7 @@ export default function AppRoutes() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/projects" element={<ProjectsPage />} />
                     <Route path="/projects/:id" element={<ProjectDetailPage />} />
-                    <Route path="/boards/:id" element={<BoardPage />} />
+                   <Route path="/projects/:projectId/boards/:boardId" element={<BoardPage />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                 </Route>
             </Routes>

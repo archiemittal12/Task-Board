@@ -170,7 +170,7 @@ const createColumn = async (req, res) => {
     });
     }
     // status is required and must be a valid TaskStatus
-    if (status || !["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(status)) {
+    if (!status || !["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Valid status is required (TODO, IN_PROGRESS, REVIEW, DONE)"
