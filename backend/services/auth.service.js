@@ -202,7 +202,11 @@ const logout = async (req, res) => {
 
     if (token) {
       await prisma.refreshToken.deleteMany({ where: { token } });
-      res.clearCookie('refreshToken');
+      res.clearCookie('refreshToken', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        });
     }
 
     return res.status(200).json({ message: 'Logged out successfully' });

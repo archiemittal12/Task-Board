@@ -132,13 +132,21 @@ const updateStoryStatus = async (storyId) => {
   });
 
   // no children — keep as TODO
-  if (children.length === 0) return;
+  if (children.length === 0) {
+    await prisma.task.update({
+      where: { id: storyId },
+      data: { status: "TODO" }
+    });
+    return;
+  }
 
   const allDone = children.every((c) => c.status === "DONE");
+  const allReview = children.every((c) => c.status === "REVIEW");
   const allTodo = children.every((c) => c.status === "TODO");
 
   let storyStatus;
   if (allDone) storyStatus = "DONE";
+  else if (allReview) storyStatus = "REVIEW";
   else if (allTodo) storyStatus = "TODO";
   else storyStatus = "IN_PROGRESS";
 
@@ -162,7 +170,7 @@ const createColumn = async (req, res) => {
     });
     }
     // status is required and must be a valid TaskStatus
-    if (!status || !["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(status)) {
+    if (status || !["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Valid status is required (TODO, IN_PROGRESS, REVIEW, DONE)"
@@ -235,7 +243,7 @@ const createColumn = async (req, res) => {
         position,
         wipLimit,
         boardId,
-        status
+        status: status ?? "TODO"
       }
     });
 
@@ -454,17 +462,18 @@ const deleteColumn = async (req, res) => {
       });
     }
     // clean up transition rules involving this column
-    await prisma.columnTransition.deleteMany({
-      where: {
-        OR: [
-          { fromColumnId: columnId },
-          { toColumnId: columnId }
-        ]
-      }
-    });
-
-    await prisma.column.delete({
-      where: { id: columnId }
+    await prisma.$transaction(async (tx) => {
+      await tx.columnTransition.deleteMany({
+        where: {
+          OR: [
+            { fromColumnId: columnId },
+            { toColumnId: columnId }
+          ]
+        }
+      });
+      await tx.column.delete({
+        where: { id: columnId }
+      });
     });
 
     return res.status(200).json({
