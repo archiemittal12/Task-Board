@@ -6,7 +6,7 @@ const projectRoutes = require('./routes/project.routes');
 const cookieParser = require('cookie-parser');
 const notificationRoutes = require('./routes/notification.routes');
 const app = express();
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.json());
 app.use(cookieParser());
 

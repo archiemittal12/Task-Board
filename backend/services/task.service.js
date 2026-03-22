@@ -147,13 +147,21 @@ const updateStoryStatus = async (storyId) => {
   });
 
   // no children — keep as TODO
-  if (children.length === 0) return;
+  if (children.length === 0) {
+    await prisma.task.update({
+      where: { id: storyId },
+      data: { status: "TODO" }
+    });
+    return;
+  }
 
   const allDone = children.every((c) => c.status === "DONE");
+  const allReview = children.every((c) => c.status === "REVIEW");
   const allTodo = children.every((c) => c.status === "TODO");
 
   let storyStatus;
   if (allDone) storyStatus = "DONE";
+  else if (allReview) storyStatus = "REVIEW";
   else if (allTodo) storyStatus = "TODO";
   else storyStatus = "IN_PROGRESS";
 
@@ -557,13 +565,9 @@ const moveTask = async (req, res) => {
       where: { id: taskId },
       data: {
         columnId: targetColumnId,
-        position
+        position,
+        status: targetColumn.status
       }
-    });
-    // update task status based on target column status
-    await prisma.task.update({
-      where: { id: taskId },
-      data: { status: targetColumn.status }
     });
 
     // if task has a parent story, recalculate story status

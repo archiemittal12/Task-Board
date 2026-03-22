@@ -17,7 +17,17 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // upload or update avatar
-router.patch('/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
+router.patch('/avatar', authMiddleware, (req, res, next) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'File upload error'
+      });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
