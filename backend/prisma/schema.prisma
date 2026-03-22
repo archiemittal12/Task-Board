@@ -61,6 +61,7 @@ model User {
   comments     Comment[]
   notifications Notification[]
   mentions Mention[]
+  refreshTokens RefreshToken[]
 }
 
 model Project {
@@ -91,6 +92,7 @@ model Board {
   createdAt DateTime @default(now())
   project   Project @relation(fields: [projectId], references: [id])
   columns   Column[]
+  transitions ColumnTransition[]
 }
 
 model Column {
@@ -99,8 +101,11 @@ model Column {
   position  Int
   wipLimit  Int?
   boardId   String
+  status TaskStatus @default(TODO)
   board     Board @relation(fields: [boardId], references: [id])
   tasks     Task[]
+  transitionsFrom ColumnTransition[] @relation("TransitionFrom")
+  transitionsTo   ColumnTransition[] @relation("TransitionTo")
 }
 
 model Task {
@@ -119,6 +124,7 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   completedAt DateTime?  
+  status TaskStatus @default(TODO)
   project     Project @relation(fields: [projectId], references: [id])
   column      Column? @relation(fields: [columnId], references: [id])
   parent      Task?   @relation("TaskHierarchy", fields: [parentId], references: [id])
@@ -173,4 +179,23 @@ model Mention {
   user      User    @relation(fields: [userId], references: [id])
 
   @@unique([commentId, userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+model ColumnTransition {
+  id           String @id @default(uuid())
+  boardId      String
+  fromColumnId String
+  toColumnId   String
+  board        Board  @relation(fields: [boardId], references: [id])
+  fromColumn   Column @relation("TransitionFrom", fields: [fromColumnId], references: [id])
+  toColumn     Column @relation("TransitionTo", fields: [toColumnId], references: [id])
+  @@unique([fromColumnId, toColumnId])
 }

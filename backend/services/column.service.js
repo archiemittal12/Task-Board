@@ -124,13 +124,35 @@ const calculatePosition = async ({
 
   return last ? last.position + 100 : 100;
 };
+// recalculate and update story status based on children's statuses
+const updateStoryStatus = async (storyId) => {
+  const children = await prisma.task.findMany({
+    where: { parentId: storyId },
+    select: { status: true }
+  });
 
+  // no children — keep as TODO
+  if (children.length === 0) return;
+
+  const allDone = children.every((c) => c.status === "DONE");
+  const allTodo = children.every((c) => c.status === "TODO");
+
+  let storyStatus;
+  if (allDone) storyStatus = "DONE";
+  else if (allTodo) storyStatus = "TODO";
+  else storyStatus = "IN_PROGRESS";
+
+  await prisma.task.update({
+    where: { id: storyId },
+    data: { status: storyStatus }
+  });
+};
 
 //create column (only admin(global and project) can create)
 const createColumn = async (req, res) => {
   try {
     const { boardId } = req.params;
-    const { name, wipLimit, beforeColumnId, afterColumnId } = req.body;
+    const { name, wipLimit, beforeColumnId, afterColumnId, status } = req.body;
     const userId = req.user.id;
 
     if (!name || !name.trim()) {
@@ -139,7 +161,13 @@ const createColumn = async (req, res) => {
         message: "Name is required"
     });
     }
-
+    // status is required and must be a valid TaskStatus
+    if (!status || !["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid status is required (TODO, IN_PROGRESS, REVIEW, DONE)"
+      });
+    }
     //Get board
     let board;
         try {
@@ -206,7 +234,8 @@ const createColumn = async (req, res) => {
         name: name.trim(),
         position,
         wipLimit,
-        boardId
+        boardId,
+        status
       }
     });
 
@@ -280,7 +309,7 @@ const getColumnsByBoard = async (req, res) => {
 const updateColumn = async (req, res) => {
   try {
     const { columnId } = req.params;
-    const { name, position, wipLimit } = req.body;
+    const { name, position, wipLimit, status } = req.body;
     const userId = req.user.id;
 
     const column = await prisma.column.findUnique({
@@ -334,14 +363,40 @@ const updateColumn = async (req, res) => {
         });
       }
     }
+    if (status && !["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
     const updated = await prisma.column.update({
       where: { id: columnId },
       data: {
         name: name !== undefined ? name.trim() : column.name,
         position: position ?? column.position,
-        wipLimit: wipLimit ?? column.wipLimit
+        wipLimit: wipLimit ?? column.wipLimit,
+        status: status ?? column.status
       }
     });
+    // if status changed, update all tasks in this column
+    if (status && status !== column.status) {
+      await prisma.task.updateMany({
+        where: { columnId },
+        data: { status }
+      });
+
+      // recalculate story status for all affected stories
+      const affectedTasks = await prisma.task.findMany({
+        where: { columnId },
+        select: { parentId: true }
+      });
+      const storyIds = [...new Set(
+        affectedTasks.filter((t) => t.parentId).map((t) => t.parentId)
+      )];
+      for (const storyId of storyIds) {
+        await updateStoryStatus(storyId);
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -398,6 +453,15 @@ const deleteColumn = async (req, res) => {
         message: "Cannot delete column with existing tasks"
       });
     }
+    // clean up transition rules involving this column
+    await prisma.columnTransition.deleteMany({
+      where: {
+        OR: [
+          { fromColumnId: columnId },
+          { toColumnId: columnId }
+        ]
+      }
+    });
 
     await prisma.column.delete({
       where: { id: columnId }

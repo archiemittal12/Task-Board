@@ -7,6 +7,8 @@ const {
   updateBoard,
   deleteBoard
 } = require("../services/board.service");
+const transitionRoutes = require("./transition.routes");
+router.use("/:boardId/transitions", transitionRoutes);
 router.post("/", createBoard);
 router.get("/", getBoards);
 router.put("/:boardId", updateBoard);
