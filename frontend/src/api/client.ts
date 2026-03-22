@@ -38,3 +38,23 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+export const fetchBoardColumns = async (projectId: string, boardId: string) => {
+  return apiClient.get(`/projects/${projectId}/boards/${boardId}/columns`);
+};
+
+export const fetchProjectStories = async (projectId: string) => {
+  return apiClient.get(`/projects/${projectId}/stories`);
+};
+
+export const createStory = async (projectId: string, storyData: any) => {
+  return apiClient.post(`/projects/${projectId}/stories`, storyData);
+};
+
+export const createWorkItem = async (columnId: string, taskData: any) => {
+  return apiClient.post(`/columns/${columnId}/tasks`, taskData);
+};
+
+export const deleteTask = async (taskId: string) => {
+  return apiClient.delete(`/tasks/${taskId}`);
+};

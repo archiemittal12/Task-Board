@@ -296,7 +296,13 @@ const getColumnsByBoard = async (req, res) => {
 
     const columns = await prisma.column.findMany({
       where: { boardId },
-      orderBy: { position: "asc" }
+      orderBy: { position: "asc" },
+
+      include: {
+        tasks: {
+          orderBy: { position: "asc" } // Keeps tasks in the right order
+        }
+      }
     });
 
     return res.status(200).json({
