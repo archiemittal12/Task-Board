@@ -2,8 +2,8 @@ const multer = require('multer');
 const path = require('path');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/avatars');
+ destination: (req, file, cb) => {
+  cb(null, path.join(__dirname, '../uploads/avatars'));
   },
   filename: (req, file, cb) => {
     // userId + timestamp to avoid collisions

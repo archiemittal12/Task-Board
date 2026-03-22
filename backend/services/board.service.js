@@ -222,6 +222,10 @@ const deleteBoard = async (req, res) => {
       });
     }
     await prisma.$transaction(async (tx) => {
+      // delete transitions first
+      await tx.columnTransition.deleteMany({
+        where: { boardId }
+      });
       // delete columns first
       await tx.column.deleteMany({
         where: { boardId }

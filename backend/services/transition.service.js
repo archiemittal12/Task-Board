@@ -132,10 +132,8 @@ const removeTransition = async (req, res) => {
       });
     }
 
-    const existing = await prisma.columnTransition.findUnique({
-      where: {
-        fromColumnId_toColumnId: { fromColumnId, toColumnId }
-      }
+    const existing = await prisma.columnTransition.findFirst({
+      where: { boardId, fromColumnId, toColumnId }
     });
     if (!existing) {
       return res.status(404).json({
@@ -144,10 +142,9 @@ const removeTransition = async (req, res) => {
       });
     }
 
-    await prisma.columnTransition.delete({
-      where: {
-        fromColumnId_toColumnId: { fromColumnId, toColumnId }
-      }
+    // after
+    await prisma.columnTransition.deleteMany({
+      where: { boardId, fromColumnId, toColumnId }
     });
 
     return res.status(200).json({
