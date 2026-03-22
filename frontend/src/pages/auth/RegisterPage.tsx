@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import apiClient from "../../api/client"; 
-import { useAuth } from "../../context/AuthContext"; 
+import apiClient from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -43,20 +43,18 @@ export default function RegisterPage() {
         <h2 className="mb-8 text-2xl font-bold text-center text-gray-900">Create an Account</h2>
 
         {error && (
-          <div className="p-3 mb-6 text-sm text-red-700 bg-red-100 rounded-md">
-            {error}
-          </div>
+          <div className="p-3 mb-6 text-sm text-red-700 bg-red-100 rounded-md">{error}</div>
         )}
 
         <form onSubmit={handleRegister} className="space-y-6">
           <div>
             {/* Changed mb-1 to mb-3 for a larger gap between label and input */}
             <label className="block mb-3 text-sm font-medium text-gray-700">Full Name</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="John Doe" 
+              placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -65,11 +63,11 @@ export default function RegisterPage() {
           <div>
             {/* Changed mb-1 to mb-3 */}
             <label className="block mb-3 text-sm font-medium text-gray-700">Username</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="johndoe123" 
+              placeholder="johndoe123"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
@@ -78,25 +76,25 @@ export default function RegisterPage() {
           <div>
             {/* Changed mb-1 to mb-3 */}
             <label className="block mb-3 text-sm font-medium text-gray-700">Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="john@example.com" 
+              placeholder="john@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          
+
           <div>
             {/* Changed mb-1 to mb-3 */}
             <label className="block mb-3 text-sm font-medium text-gray-700">Password</label>
             <div className="relative">
-              <input 
-                type={showPassword ? "text" : "password"} 
+              <input
+                type={showPassword ? "text" : "password"}
                 required
                 className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="••••••••" 
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -110,8 +108,8 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="w-full px-4 py-3 mt-6 text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
           >
@@ -121,7 +119,10 @@ export default function RegisterPage() {
 
         <p className="mt-8 text-sm text-center text-gray-600">
           Already have an account?{" "}
-          <button onClick={() => navigate("/login")} className="font-medium text-blue-600 hover:underline">
+          <button
+            onClick={() => navigate("/login")}
+            className="font-medium text-blue-600 hover:underline"
+          >
             Login
           </button>
         </p>

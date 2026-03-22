@@ -44,16 +44,16 @@ export interface Task {
   projectId: string;
   columnId: string | null;
   parentId: string | null; // Changed from 'storyId' to match Prisma 'parentId'
-  
+
   // IDs for references
-  assigneeId: string | null; 
-  reporterId: string | null; 
-  
+  assigneeId: string | null;
+  reporterId: string | null;
+
   // Optional populated objects (available when using getTaskById)
   assignee?: User | null;
   reporter?: User | null;
-  comments?: TaskComment[]; 
-  
+  comments?: TaskComment[];
+
   createdAt: string;
   updatedAt: string;
 }

@@ -46,14 +46,19 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // now we will create the user in the database
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        username: username.trim().toLowerCase(),
-      },
-    });
+    // First registered user becomes Global Admin
+      const userCount = await prisma.user.count();
+
+      const user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          username: username.trim().toLowerCase(),
+          globalRole: userCount === 0 ? "ADMIN" : "USER",
+          avatarUrl: user.avatarUrl ?? null, 
+        },
+      });
 
     // generate both tokens
     const accessToken = generateToken(user.id);
@@ -79,6 +84,7 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         username: user.username,
+         globalRole: user.globalRole,
       },
     });
 
@@ -144,6 +150,8 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         username: user.username,
+         globalRole: user.globalRole,
+         avatarUrl: user.avatarUrl ?? null, 
       },
     });
 

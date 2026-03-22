@@ -3,6 +3,8 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 const prisma = require('../config/db');
+const { checkGlobalAdmin } = require('../middleware/adminMiddleware');
+
 
 router.get('/me', authMiddleware, async (req, res) => {
   return res.status(200).json({
@@ -58,4 +60,45 @@ router.patch('/avatar', authMiddleware, (req, res, next) => {
   }
 });
 
+
+router.get('/all', authMiddleware, checkGlobalAdmin, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true, name: true, username: true,
+        email: true, globalRole: true,
+        avatarUrl: true, createdAt: true
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+    return res.status(200).json({ success: true, data: users });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.patch('/:userId/role', authMiddleware, checkGlobalAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { globalRole } = req.body;
+
+    if (!["ADMIN", "USER"].includes(globalRole)) {
+      return res.status(400).json({ success: false, message: "Invalid role" });
+    }
+
+    if (userId === req.user.id) {
+      return res.status(400).json({ success: false, message: "Cannot change your own global role" });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { globalRole },
+      select: { id: true, globalRole: true }
+    });
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 module.exports = router;

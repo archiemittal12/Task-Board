@@ -16,17 +16,28 @@ export default function CreateStoryModal({ projectId, onClose, onCreate }: Creat
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", borderRadius: 8,
-    border: "1px solid #e2e8f0", fontSize: 14, outline: "none",
-    boxSizing: "border-box", background: "#fff",
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    fontSize: 14,
+    outline: "none",
+    boxSizing: "border-box",
+    background: "#fff",
   };
   const labelStyle: React.CSSProperties = {
-    display: "block", fontSize: 14, fontWeight: 600,
-    color: "#1e293b", marginBottom: 6,
+    display: "block",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#1e293b",
+    marginBottom: 6,
   };
 
   const handleCreate = async () => {
-    if (!title.trim()) { alert("Title is required"); return; }
+    if (!title.trim()) {
+      alert("Title is required");
+      return;
+    }
     setIsSubmitting(true);
     try {
       await apiClient.post(`/projects/${projectId}/stories`, {
@@ -45,26 +56,75 @@ export default function CreateStoryModal({ projectId, onClose, onCreate }: Creat
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100 }}>
-      <div style={{ background: "#fff", borderRadius: 16, width: "min(500px, 94vw)", maxHeight: "92vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
-
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1100,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          width: "min(500px, 94vw)",
+          maxHeight: "92vh",
+          overflowY: "auto",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+        }}
+      >
         {/* HEADER */}
-        <div style={{ padding: "24px 24px 0 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            padding: "24px 24px 0 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#0f172a" }}>Create Story</h2>
-            <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#64748b" }}>Add a new story to group related tasks</p>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#0f172a" }}>
+              Create Story
+            </h2>
+            <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#64748b" }}>
+              Add a new story to group related tasks
+            </p>
           </div>
-          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: "#64748b" }}>✕</button>
+          <button
+            onClick={onClose}
+            style={{
+              background: "#f1f5f9",
+              border: "none",
+              borderRadius: 8,
+              width: 32,
+              height: 32,
+              cursor: "pointer",
+              fontSize: 16,
+              color: "#64748b",
+            }}
+          >
+            ✕
+          </button>
         </div>
 
         {/* BODY */}
-        <div style={{ padding: "20px 24px 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-
+        <div
+          style={{
+            padding: "20px 24px 24px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
           <div>
             <label style={labelStyle}>Title</label>
             <input
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Mobile App Revamp"
               style={inputStyle}
             />
@@ -74,7 +134,7 @@ export default function CreateStoryModal({ projectId, onClose, onCreate }: Creat
             <label style={labelStyle}>Description</label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe this story..."
               rows={3}
               style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
@@ -84,7 +144,11 @@ export default function CreateStoryModal({ projectId, onClose, onCreate }: Creat
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={labelStyle}>Priority</label>
-              <select value={priority} onChange={e => setPriority(e.target.value as TaskPriority)} style={inputStyle}>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                style={inputStyle}
+              >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="HIGH">High</option>
@@ -96,7 +160,7 @@ export default function CreateStoryModal({ projectId, onClose, onCreate }: Creat
               <input
                 type="date"
                 value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
+                onChange={(e) => setDueDate(e.target.value)}
                 style={inputStyle}
               />
             </div>
@@ -105,14 +169,31 @@ export default function CreateStoryModal({ projectId, onClose, onCreate }: Creat
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
             <button
               onClick={onClose}
-              style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", fontWeight: 500, fontSize: 14 }}
+              style={{
+                padding: "10px 20px",
+                borderRadius: 10,
+                border: "1px solid #e2e8f0",
+                background: "#fff",
+                cursor: "pointer",
+                fontWeight: 500,
+                fontSize: 14,
+              }}
             >
               Cancel
             </button>
             <button
               onClick={handleCreate}
               disabled={isSubmitting}
-              style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: isSubmitting ? "#a5b4fc" : "#6366f1", color: "#fff", cursor: isSubmitting ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 14 }}
+              style={{
+                padding: "10px 20px",
+                borderRadius: 10,
+                border: "none",
+                background: isSubmitting ? "#a5b4fc" : "#6366f1",
+                color: "#fff",
+                cursor: isSubmitting ? "not-allowed" : "pointer",
+                fontWeight: 600,
+                fontSize: 14,
+              }}
             >
               {isSubmitting ? "Creating..." : "Create Story"}
             </button>

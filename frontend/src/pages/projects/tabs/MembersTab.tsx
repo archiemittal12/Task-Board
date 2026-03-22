@@ -8,8 +8,12 @@ interface MembersTabProps {
   refreshProject: () => void;
 }
 
-export default function MembersTab({ projectId, members, isAdmin, refreshProject }: MembersTabProps) {
-  
+export default function MembersTab({
+  projectId,
+  members,
+  isAdmin,
+  refreshProject,
+}: MembersTabProps) {
   // 1. UPDATED: Accept userId instead of memberId
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
@@ -38,7 +42,14 @@ export default function MembersTab({ projectId, members, isAdmin, refreshProject
   };
 
   return (
-    <div style={{ background: "#ffffff", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+    <div
+      style={{
+        background: "#ffffff",
+        padding: "20px",
+        borderRadius: "14px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+      }}
+    >
       <h3 style={{ margin: "0 0 15px 0", fontSize: "20px" }}>Project Members ({members.length})</h3>
 
       <div style={{ display: "flex", flexDirection: "column" }}>
@@ -61,7 +72,7 @@ export default function MembersTab({ projectId, members, isAdmin, refreshProject
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
               <select
                 value={m.role}
-                disabled={!isAdmin} 
+                disabled={!isAdmin}
                 onChange={(e) => handleRoleChange(m.user.id, e.target.value)} // Fixed: Passed m.user.id
                 style={{
                   padding: "6px 12px",
@@ -70,7 +81,7 @@ export default function MembersTab({ projectId, members, isAdmin, refreshProject
                   background: isAdmin ? "#fff" : "#f8fafc",
                   cursor: isAdmin ? "pointer" : "not-allowed",
                   fontWeight: "500",
-                  color: "#475569"
+                  color: "#475569",
                 }}
               >
                 <option value="ADMIN">Admin</option>
@@ -89,7 +100,7 @@ export default function MembersTab({ projectId, members, isAdmin, refreshProject
                     background: "#fef2f2",
                     color: "#ef4444",
                     cursor: "pointer",
-                    fontWeight: "500"
+                    fontWeight: "500",
                   }}
                 >
                   Remove
