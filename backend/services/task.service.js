@@ -139,6 +139,29 @@ const logAudit = async ({ taskId, field, oldValue, newValue, userId }) => {
   });
 };
 
+// recalculate and update story status based on children's statuses
+const updateStoryStatus = async (storyId) => {
+  const children = await prisma.task.findMany({
+    where: { parentId: storyId },
+    select: { status: true }
+  });
+
+  // no children — keep as TODO
+  if (children.length === 0) return;
+
+  const allDone = children.every((c) => c.status === "DONE");
+  const allTodo = children.every((c) => c.status === "TODO");
+
+  let storyStatus;
+  if (allDone) storyStatus = "DONE";
+  else if (allTodo) storyStatus = "TODO";
+  else storyStatus = "IN_PROGRESS";
+
+  await prisma.task.update({
+    where: { id: storyId },
+    data: { status: storyStatus }
+  });
+};
 // this function will create a story, it is separate from createTask because story has different rules than task and bug
 const createStory = async (req, res) => {
   try {
@@ -371,6 +394,7 @@ const createWorkItem = async (req, res) => {
 
     // ===== position =====
     const position = await getLastPosition(columnId);
+    const taskStatus = column.status;
 
     // ===== create =====
     const task = await prisma.task.create({
@@ -385,7 +409,8 @@ const createWorkItem = async (req, res) => {
         reporterId: userId,
         parentId,
         type,
-        position
+        position,
+        status: taskStatus
       }
     });
     // notify assignee if one was set and they are not the creator
@@ -491,6 +516,30 @@ const moveTask = async (req, res) => {
             });
         }
     }
+    // check transition rules if moving to a different column
+    if (targetColumnId !== task.columnId) {
+      const rules = await prisma.columnTransition.count({
+        where: { boardId: targetColumn.boardId }
+      });
+
+      // if rules exist, validate this specific transition
+      if (rules > 0) {
+        const allowed = await prisma.columnTransition.findUnique({
+          where: {
+            fromColumnId_toColumnId: {
+              fromColumnId: task.columnId,
+              toColumnId: targetColumnId
+            }
+          }
+        });
+        if (!allowed) {
+          return res.status(403).json({
+            success: false,
+            message: "This transition is not allowed"
+          });
+        }
+      }
+    }
 
     const position = await calculatePosition({
       columnId: targetColumnId,
@@ -511,6 +560,16 @@ const moveTask = async (req, res) => {
         position
       }
     });
+    // update task status based on target column status
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { status: targetColumn.status }
+    });
+
+    // if task has a parent story, recalculate story status
+    if (task.parentId) {
+      await updateStoryStatus(task.parentId);
+    }
     // log column change as a status change
     if (targetColumnId !== task.columnId) {
       await logAudit({
