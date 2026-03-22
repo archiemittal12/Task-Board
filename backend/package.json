@@ -1,7 +1,8 @@
 {
   "scripts": {
     "dev": "nodemon index.js",
-    "lint": "eslint .",
+    "lint": "eslint **/*.js",
+    "lint:fix": "eslint **/*.js --fix",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -17,7 +18,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "eslint-config-google": "^0.14.0",
     "globals": "^17.4.0",
     "nodemon": "^3.0.0",

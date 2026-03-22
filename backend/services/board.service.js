@@ -1,9 +1,5 @@
-const prisma = require("../config/db");
-const {
-  checkProjectMembership,
-  checkProjectAdmin
-} = require("../utils/projectAuth");
-
+const prisma = require('../config/db');
+const { checkProjectMembership, checkProjectAdmin } = require('../utils/projectAuth');
 
 // create board (only admin(global and project) can create)
 const createBoard = async (req, res) => {
@@ -14,13 +10,13 @@ const createBoard = async (req, res) => {
 
     //Check project exists
     const project = await prisma.project.findUnique({
-      where: { id: projectId }
+      where: { id: projectId },
     });
 
     if (!project) {
       return res.status(404).json({
         success: false,
-        message: "Project not found"
+        message: 'Project not found',
       });
     }
 
@@ -29,27 +25,27 @@ const createBoard = async (req, res) => {
     if (!admin) {
       return res.status(403).json({
         success: false,
-        message: "Only project admin can create board"
+        message: 'Only project admin can create board',
       });
     }
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Board name is required"
+        message: 'Board name is required',
       });
     }
     //]Unique name check(board name should be unique within the project)
     const existingBoard = await prisma.board.findFirst({
       where: {
         projectId,
-         name: { equals: name.trim(), mode: "insensitive" }
-      }
+        name: { equals: name.trim(), mode: 'insensitive' },
+      },
     });
 
     if (existingBoard) {
       return res.status(400).json({
         success: false,
-        message: "Board with this name already exists"
+        message: 'Board with this name already exists',
       });
     }
 
@@ -57,26 +53,23 @@ const createBoard = async (req, res) => {
     const board = await prisma.board.create({
       data: {
         name: name.trim(),
-        projectId
-      }
+        projectId,
+      },
     });
 
     return res.status(201).json({
       success: true,
       data: board,
-      message: "Board created successfully"
+      message: 'Board created successfully',
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
-
-
 
 //get boards of a project (only members can access)
 const getBoards = async (req, res) => {
@@ -90,47 +83,44 @@ const getBoards = async (req, res) => {
     if (!member) {
       return res.status(403).json({
         success: false,
-        message: "Access denied"
+        message: 'Access denied',
       });
     }
 
     //Fetch boards
     const boards = await prisma.board.findMany({
       where: { projectId },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: 'asc' },
     });
 
     return res.status(200).json({
       success: true,
-      data: boards
+      data: boards,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
 
-
-
 //update board (only admin(global and project) can update)
 const updateBoard = async (req, res) => {
   try {
-   const { boardId } = req.params;
+    const { boardId } = req.params;
     const { name } = req.body;
     const userId = req.user.id;
     //get board
     const board = await prisma.board.findUnique({
-      where: { id: boardId }
+      where: { id: boardId },
     });
 
     if (!board) {
       return res.status(404).json({
         success: false,
-        message: "Board not found"
+        message: 'Board not found',
       });
     }
 
@@ -139,53 +129,49 @@ const updateBoard = async (req, res) => {
     if (!admin) {
       return res.status(403).json({
         success: false,
-        message: "Only project admin can update board"
+        message: 'Only project admin can update board',
       });
     }
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Board name is required"
+        message: 'Board name is required',
       });
     }
     //Unique name check
     const existing = await prisma.board.findFirst({
       where: {
         projectId: board.projectId,
-         name: { equals: name.trim(), mode: "insensitive" }
-      }
+        name: { equals: name.trim(), mode: 'insensitive' },
+      },
     });
 
     if (existing && existing.id !== boardId) {
       return res.status(400).json({
         success: false,
-        message: "Board name already exists"
+        message: 'Board name already exists',
       });
     }
-
 
     //Update
     const updatedBoard = await prisma.board.update({
       where: { id: boardId },
-      data: { name: name.trim() }
+      data: { name: name.trim() },
     });
 
     return res.status(200).json({
       success: true,
       data: updatedBoard,
-      message: "Board updated successfully"
+      message: 'Board updated successfully',
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
-
-
 
 //delete board (only admin(global and project) can delete)
 const deleteBoard = async (req, res) => {
@@ -193,64 +179,63 @@ const deleteBoard = async (req, res) => {
     const { boardId } = req.params;
     const userId = req.user.id;
     const board = await prisma.board.findUnique({
-      where: { id: boardId }
+      where: { id: boardId },
     });
     if (!board) {
       return res.status(404).json({
         success: false,
-        message: "Board not found"
+        message: 'Board not found',
       });
     }
     const admin = await checkProjectAdmin(board.projectId, userId);
     if (!admin) {
       return res.status(403).json({
         success: false,
-        message: "Only project admin can delete board"
+        message: 'Only project admin can delete board',
       });
     }
     // if a column has tasks then prevent deletion of board (to prevent orphan tasks)
     const columnsWithTasks = await prisma.column.findFirst({
       where: {
         boardId,
-        tasks: { some: {} }
-      }
+        tasks: { some: {} },
+      },
     });
     if (columnsWithTasks) {
       return res.status(400).json({
         success: false,
-        message: "Cannot delete board with existing tasks"
+        message: 'Cannot delete board with existing tasks',
       });
     }
     await prisma.$transaction(async (tx) => {
       // delete transitions first
       await tx.columnTransition.deleteMany({
-        where: { boardId }
+        where: { boardId },
       });
       // delete columns first
       await tx.column.deleteMany({
-        where: { boardId }
+        where: { boardId },
       });
       // then delete board
       await tx.board.delete({
-        where: { id: boardId }
+        where: { id: boardId },
       });
     });
     return res.status(200).json({
       success: true,
-      message: "Board deleted successfully"
+      message: 'Board deleted successfully',
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
 module.exports = {
-    createBoard,
-    getBoards,
-    updateBoard,
-    deleteBoard
+  createBoard,
+  getBoards,
+  updateBoard,
+  deleteBoard,
 };
