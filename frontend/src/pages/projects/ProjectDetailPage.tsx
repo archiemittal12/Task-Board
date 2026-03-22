@@ -186,7 +186,7 @@ export default function ProjectDetailPage() {
       {/* 🌟 CONTENT */}
       <div>
         {activeTab === "summary" && (
-          <SummaryTab createdAt={project.createdAt} updatedAt={project.updatedAt} />
+          <SummaryTab projectId={project.id} createdAt={project.createdAt} updatedAt={project.updatedAt} />
         )}
 
         {activeTab === "boards" && (

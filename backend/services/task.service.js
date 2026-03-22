@@ -608,9 +608,14 @@ const getTaskById = async (req, res) => {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        assignee: true,
-        reporter: true,
-        comments: true
+        assignee: { select: { id: true, name: true, username: true, avatarUrl: true } },
+        reporter: { select: { id: true, name: true, username: true, avatarUrl: true } },
+        comments: {
+          include: {
+            user: { select: { id: true, name: true, username: true, avatarUrl: true } }
+          },
+          orderBy: { createdAt: "asc" }
+        }
       }
     });
 
