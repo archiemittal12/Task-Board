@@ -3,17 +3,15 @@ const prisma = require('../config/db');
 const { generateToken, generateRefreshToken } = require('../utils/generateToken');
 const jwt = require('jsonwebtoken');
 
-
 // helper to set refresh token cookie
 const setRefreshCookie = (res, token) => {
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   });
 };
-
 
 const register = async (req, res) => {
   try {
@@ -47,18 +45,18 @@ const register = async (req, res) => {
 
     // now we will create the user in the database
     // First registered user becomes Global Admin
-      const userCount = await prisma.user.count();
+    const userCount = await prisma.user.count();
 
-      const user = await prisma.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          username: username.trim().toLowerCase(),
-          globalRole: userCount === 0 ? "ADMIN" : "USER",
-          avatarUrl: user.avatarUrl ?? null, 
-        },
-      });
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        username: username.trim().toLowerCase(),
+        globalRole: userCount === 0 ? 'ADMIN' : 'USER',
+        avatarUrl: user.avatarUrl ?? null,
+      },
+    });
 
     // generate both tokens
     const accessToken = generateToken(user.id);
@@ -69,8 +67,8 @@ const register = async (req, res) => {
       data: {
         token: refreshToken,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      }
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
     });
 
     // set refresh token in http-only cookie
@@ -84,10 +82,9 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         username: user.username,
-         globalRole: user.globalRole,
+        globalRole: user.globalRole,
       },
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -95,7 +92,6 @@ const register = async (req, res) => {
     });
   }
 };
-
 
 const login = async (req, res) => {
   try {
@@ -135,8 +131,8 @@ const login = async (req, res) => {
       data: {
         token: refreshToken,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      }
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
     });
 
     // set refresh token in http-only cookie
@@ -150,11 +146,10 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         username: user.username,
-         globalRole: user.globalRole,
-         avatarUrl: user.avatarUrl ?? null, 
+        globalRole: user.globalRole,
+        avatarUrl: user.avatarUrl ?? null,
       },
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -162,7 +157,6 @@ const login = async (req, res) => {
     });
   }
 };
-
 
 // issue a new access token using the refresh token from cookie
 const refresh = async (req, res) => {
@@ -175,7 +169,7 @@ const refresh = async (req, res) => {
 
     // check if token exists in db (not logged out)
     const stored = await prisma.refreshToken.findUnique({
-      where: { token }
+      where: { token },
     });
 
     if (!stored) {
@@ -195,13 +189,11 @@ const refresh = async (req, res) => {
     const accessToken = generateToken(payload.id);
 
     return res.status(200).json({ token: accessToken });
-
   } catch (error) {
     console.error(error);
     return res.status(401).json({ message: 'Invalid refresh token' });
   }
 };
-
 
 // logout — delete from db and clear cookie so token cannot be reused
 const logout = async (req, res) => {
@@ -211,19 +203,17 @@ const logout = async (req, res) => {
     if (token) {
       await prisma.refreshToken.deleteMany({ where: { token } });
       res.clearCookie('refreshToken', {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict'
-        });
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
     }
 
     return res.status(200).json({ message: 'Logged out successfully' });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 module.exports = { register, login, refresh, logout };

@@ -1,28 +1,27 @@
 const prisma = require('../config/db');
-const { 
+const {
   checkProjectMembership, // this is to check whether the user is a member of the project (for GET /projects/:id)
-  checkProjectAdmin // this is to check whether the user is an admin of the project (for UPDATE & DELETE /projects/:id)
-} = require("../utils/projectAuth");
-
+  checkProjectAdmin, // this is to check whether the user is an admin of the project (for UPDATE & DELETE /projects/:id)
+} = require('../utils/projectAuth');
 
 // creating a project(creator is automatically added as admin)
 const createProject = async (req, res) => {
   try {
-    const {name, description } = req.body;
+    const { name, description } = req.body;
     if (!name) {
       return res.status(400).json({
-        error: "Project name is required"
+        error: 'Project name is required',
       });
     }
     // Only global admins can create projects
     const requestingUser = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { globalRole: true }
+      select: { globalRole: true },
     });
 
-    if (requestingUser?.globalRole !== "ADMIN") {
+    if (requestingUser?.globalRole !== 'ADMIN') {
       return res.status(403).json({
-        error: "Only Global Admins can create projects"
+        error: 'Only Global Admins can create projects',
       });
     }
     const project = await prisma.project.create({
@@ -32,29 +31,28 @@ const createProject = async (req, res) => {
         members: {
           create: {
             userId: req.user.id,
-            role: "ADMIN"
-          }
-        }
+            role: 'ADMIN',
+          },
+        },
       },
       include: {
-        members: true
-      }
+        members: true,
+      },
     });
 
     return res.status(201).json({
-      message: "Project created successfully",
+      message: 'Project created successfully',
       project: {
         id: project.id,
         name: project.name,
         description: project.description,
-        createdAt: project.createdAt
-      }
+        createdAt: project.createdAt,
+      },
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      error: "Failed to create project"
+      error: 'Failed to create project',
     });
   }
 };
@@ -66,37 +64,35 @@ const getProjects = async (req, res) => {
       where: {
         members: {
           some: {
-            userId: req.user.id
-          }
-        }
+            userId: req.user.id,
+          },
+        },
       },
       include: {
         boards: {
           select: {
             id: true,
-            name: true
-          }
-        }
+            name: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: 'desc',
+      },
     });
     return res.status(200).json({
       count: projects.length,
-      projects
+      projects,
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      error: "Failed to fetch projects"
+      error: 'Failed to fetch projects',
     });
   }
 };
 
-
-
-// get project by id 
+// get project by id
 const getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -104,7 +100,7 @@ const getProjectById = async (req, res) => {
     const membership = await checkProjectMembership(id, req.user.id);
     if (!membership) {
       return res.status(403).json({
-        error: "Access denied"
+        error: 'Access denied',
       });
     }
     const project = await prisma.project.findUnique({
@@ -117,31 +113,28 @@ const getProjectById = async (req, res) => {
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!project) {
       return res.status(404).json({
-        error: "Project not found"
+        error: 'Project not found',
       });
     }
     return res.status(200).json({
-      project
+      project,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      error: "Failed to fetch project"
+      error: 'Failed to fetch project',
     });
   }
 };
-
-
 
 //update project (only admin can update)
 // backend/services/project.service.js
@@ -150,16 +143,16 @@ const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
     // 1. Destructure isArchived from req.body
-    const { name, description, isArchived } = req.body; 
+    const { name, description, isArchived } = req.body;
 
     // check admin
     const isAdmin = await checkProjectAdmin(id, req.user.id);
     if (!isAdmin) {
       return res.status(403).json({
-        error: "Only admins can update project"
+        error: 'Only admins can update project',
       });
     }
-    
+
     const data = {};
     if (name !== undefined) {
       data.name = name;
@@ -174,23 +167,20 @@ const updateProject = async (req, res) => {
 
     const project = await prisma.project.update({
       where: { id },
-      data
+      data,
     });
 
     return res.status(200).json({
-      message: "Project updated successfully",
-      project
+      message: 'Project updated successfully',
+      project,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      error: "Failed to update project"
+      error: 'Failed to update project',
     });
   }
 };
-
-
 
 // delete project (only admin can delete)
 const deleteProject = async (req, res) => {
@@ -199,14 +189,14 @@ const deleteProject = async (req, res) => {
     const isAdmin = await checkProjectAdmin(id, req.user.id);
     if (!isAdmin) {
       return res.status(403).json({
-        error: "Only admins can delete project"
+        error: 'Only admins can delete project',
       });
     }
     await prisma.$transaction(async (tx) => {
       // get all task ids in this project first
       const tasks = await tx.task.findMany({
         where: { projectId: id },
-        select: { id: true }
+        select: { id: true },
       });
       const taskIds = tasks.map((t) => t.id);
       // delete mentions, comments, audits first
@@ -217,37 +207,36 @@ const deleteProject = async (req, res) => {
       // delete tasks first because of foreign key constraint
 
       await tx.task.deleteMany({
-        where: { projectId: id }
+        where: { projectId: id },
       });
       // delete columns
       await tx.column.deleteMany({
         where: {
           board: {
-            projectId: id
-          }
-        }
+            projectId: id,
+          },
+        },
       });
       // delete boards
       await tx.board.deleteMany({
-        where: { projectId: id }
+        where: { projectId: id },
       });
       // delete members
       await tx.projectMember.deleteMany({
-        where: { projectId: id }
+        where: { projectId: id },
       });
       // finally delete project
       await tx.project.delete({
-        where: { id }
+        where: { id },
       });
     });
     return res.status(200).json({
-      message: "Project deleted successfully"
+      message: 'Project deleted successfully',
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      error: "Failed to delete project"
+      error: 'Failed to delete project',
     });
   }
 };
@@ -257,5 +246,5 @@ module.exports = {
   getProjects,
   getProjectById,
   updateProject,
-  deleteProject
+  deleteProject,
 };

@@ -1,4 +1,4 @@
-const prisma = require("../config/db");
+const prisma = require('../config/db');
 
 // check membership
 const checkProjectMembership = async (projectId, userId) => {
@@ -6,9 +6,9 @@ const checkProjectMembership = async (projectId, userId) => {
     where: {
       projectId_userId: {
         projectId,
-        userId
-        }
-    }
+        userId,
+      },
+    },
   });
 };
 
@@ -16,7 +16,7 @@ const checkProjectMembership = async (projectId, userId) => {
 const checkProjectAdmin = async (projectId, userId) => {
   const member = await checkProjectMembership(projectId, userId);
   if (!member) return null;
-  if (member.role === "ADMIN") {
+  if (member.role === 'ADMIN') {
     return member;
   }
   return null;
@@ -25,13 +25,13 @@ const checkProjectAdmin = async (projectId, userId) => {
 const checkProjectWriteAccess = async (projectId, userId) => {
   const member = await prisma.projectMember.findUnique({
     where: {
-      projectId_userId: { projectId, userId }
-    }
+      projectId_userId: { projectId, userId },
+    },
   });
 
   if (!member) return null;
 
-  if (member.role === "VIEWER") return null;
+  if (member.role === 'VIEWER') return null;
 
   return member;
 };
@@ -39,5 +39,5 @@ const checkProjectWriteAccess = async (projectId, userId) => {
 module.exports = {
   checkProjectMembership,
   checkProjectAdmin,
-  checkProjectWriteAccess
+  checkProjectWriteAccess,
 };

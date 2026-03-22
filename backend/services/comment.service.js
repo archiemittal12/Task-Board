@@ -1,10 +1,9 @@
-const prisma = require("../config/db");
+const prisma = require('../config/db');
 const {
   checkProjectMembership,
   checkProjectAdmin,
-  checkProjectWriteAccess
-} = require("../utils/projectAuth");
-
+  checkProjectWriteAccess,
+} = require('../utils/projectAuth');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -19,7 +18,6 @@ const parseMentions = (content) => {
   return [...new Set(names)]; // deduplicate
 };
 
-
 // resolve usernames → users who are actually members of this project
 // queries by username (unique field) — name is not unique so cannot be used
 // silently ignores outsiders and unrecognised usernames
@@ -28,25 +26,23 @@ const resolveMentionedMembers = async (usernames, projectId) => {
 
   const users = await prisma.user.findMany({
     where: {
-      username: { in: usernames },   // ← was name, fixed to username
+      username: { in: usernames }, // ← was name, fixed to username
       projects: {
-        some: { projectId }
-      }
+        some: { projectId },
+      },
     },
-    select: { id: true, username: true }
+    select: { id: true, username: true },
   });
 
   return users;
 };
 
-
 // small wrapper to keep audit log creation clean at call sites
 const logAudit = async (tx, { taskId, field, oldValue, newValue, userId }) => {
   await tx.taskAudit.create({
-    data: { taskId, field, oldValue, newValue, userId }
+    data: { taskId, field, oldValue, newValue, userId },
   });
 };
-
 
 // ─── Create Comment ──────────────────────────────────────────────────────────
 
@@ -59,18 +55,18 @@ const createComment = async (req, res) => {
     if (!content || !content.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Content is required"
+        message: 'Content is required',
       });
     }
 
     const task = await prisma.task.findUnique({
-      where: { id: taskId }
+      where: { id: taskId },
     });
 
     if (!task) {
       return res.status(404).json({
         success: false,
-        message: "Task not found"
+        message: 'Task not found',
       });
     }
 
@@ -78,7 +74,7 @@ const createComment = async (req, res) => {
     if (!member) {
       return res.status(403).json({
         success: false,
-        message: "Not allowed"
+        message: 'Not allowed',
       });
     }
 
@@ -91,8 +87,8 @@ const createComment = async (req, res) => {
         data: {
           content: content.trim(),
           taskId,
-          userId
-        }
+          userId,
+        },
       });
 
       // store mention records
@@ -100,31 +96,30 @@ const createComment = async (req, res) => {
         await tx.mention.createMany({
           data: mentionedUsers.map((u) => ({
             commentId: newComment.id,
-            userId: u.id
-          }))
+            userId: u.id,
+          })),
         });
 
         // notify every mentioned user
         await tx.notification.createMany({
           data: mentionedUsers.map((u) => ({
             userId: u.id,
-            type: "USER_MENTIONED",
-            message: `You were mentioned in a comment on task: "${task.title}"`
-          }))
+            type: 'USER_MENTIONED',
+            message: `You were mentioned in a comment on task: "${task.title}"`,
+          })),
         });
       }
 
       await logAudit(tx, {
         taskId,
-        field: "comment",
+        field: 'comment',
         oldValue: null,
         newValue: content.trim(),
-        userId
+        userId,
       });
       // notify assignee and reporter about the new comment,skip if they are the one who made the comment
-      const notifyUserIds = [task.assigneeId, task.reporterId]
-        .filter((id) => id && id !== userId);
-        
+      const notifyUserIds = [task.assigneeId, task.reporterId].filter((id) => id && id !== userId);
+
       // deduplicate in case assignee and reporter are same person
       const uniqueUserIds = [...new Set(notifyUserIds)];
 
@@ -132,29 +127,26 @@ const createComment = async (req, res) => {
         await tx.notification.createMany({
           data: uniqueUserIds.map((id) => ({
             userId: id,
-            type: "COMMENT_ADDED",
-            message: `A new comment was added on task: "${task.title}"`
-          }))
+            type: 'COMMENT_ADDED',
+            message: `A new comment was added on task: "${task.title}"`,
+          })),
         });
       }
       return newComment;
     });
 
-
     return res.status(201).json({
       success: true,
-      data: comment
+      data: comment,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
-
 
 // ─── Update Comment ───────────────────────────────────────────────────────────
 
@@ -167,25 +159,25 @@ const updateComment = async (req, res) => {
     if (!content || !content.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Content is required"
+        message: 'Content is required',
       });
     }
 
     const comment = await prisma.comment.findUnique({
-      where: { id: commentId }
+      where: { id: commentId },
     });
 
     if (!comment || comment.taskId !== taskId) {
       return res.status(404).json({
         success: false,
-        message: "Comment not found"
+        message: 'Comment not found',
       });
     }
 
     // need task for projectId and notification message
     const task = await prisma.task.findUnique({
       where: { id: taskId },
-      select: { projectId: true, title: true }
+      select: { projectId: true, title: true },
     });
 
     // verify user still has write access to this project
@@ -194,7 +186,7 @@ const updateComment = async (req, res) => {
     if (!member) {
       return res.status(403).json({
         success: false,
-        message: "Not allowed"
+        message: 'Not allowed',
       });
     }
 
@@ -202,7 +194,7 @@ const updateComment = async (req, res) => {
     if (comment.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: "You can only edit your own comments"
+        message: 'You can only edit your own comments',
       });
     }
 
@@ -217,7 +209,7 @@ const updateComment = async (req, res) => {
     const updated = await prisma.$transaction(async (tx) => {
       const updatedComment = await tx.comment.update({
         where: { id: commentId },
-        data: { content: content.trim() }
+        data: { content: content.trim() },
       });
 
       // rebuild mention records from scratch (simplest correct approach)
@@ -227,8 +219,8 @@ const updateComment = async (req, res) => {
         await tx.mention.createMany({
           data: allMentionedUsers.map((u) => ({
             commentId,
-            userId: u.id
-          }))
+            userId: u.id,
+          })),
         });
       }
 
@@ -237,18 +229,18 @@ const updateComment = async (req, res) => {
         await tx.notification.createMany({
           data: newlyMentionedUsers.map((u) => ({
             userId: u.id,
-            type: "USER_MENTIONED",
-            message: `You were mentioned in a comment on task: "${task.title}"`
-          }))
+            type: 'USER_MENTIONED',
+            message: `You were mentioned in a comment on task: "${task.title}"`,
+          })),
         });
       }
 
       await logAudit(tx, {
         taskId,
-        field: "comment",
+        field: 'comment',
         oldValue: comment.content,
         newValue: content.trim(),
-        userId
+        userId,
       });
 
       return updatedComment;
@@ -256,18 +248,16 @@ const updateComment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: updated
+      data: updated,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
-
 
 // ─── Delete Comment ───────────────────────────────────────────────────────────
 
@@ -277,19 +267,19 @@ const deleteComment = async (req, res) => {
     const userId = req.user.id;
 
     const comment = await prisma.comment.findUnique({
-      where: { id: commentId }
+      where: { id: commentId },
     });
 
     if (!comment || comment.taskId !== taskId) {
       return res.status(404).json({
         success: false,
-        message: "Comment not found"
+        message: 'Comment not found',
       });
     }
 
     const task = await prisma.task.findUnique({
       where: { id: taskId },
-      select: { projectId: true }
+      select: { projectId: true },
     });
 
     // verify user still has write access (membership + not a viewer)
@@ -298,7 +288,7 @@ const deleteComment = async (req, res) => {
     if (!writeAccess) {
       return res.status(403).json({
         success: false,
-        message: "Access denied"
+        message: 'Access denied',
       });
     }
 
@@ -310,7 +300,7 @@ const deleteComment = async (req, res) => {
       if (!admin) {
         return res.status(403).json({
           success: false,
-          message: "You can only delete your own comments"
+          message: 'You can only delete your own comments',
         });
       }
     }
@@ -321,10 +311,10 @@ const deleteComment = async (req, res) => {
 
       await logAudit(tx, {
         taskId,
-        field: "comment",
+        field: 'comment',
         oldValue: comment.content,
         newValue: null,
-        userId
+        userId,
       });
 
       await tx.comment.delete({ where: { id: commentId } });
@@ -332,18 +322,16 @@ const deleteComment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Comment deleted successfully"
+      message: 'Comment deleted successfully',
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
-
 
 // Activity Timeline
 
@@ -354,13 +342,13 @@ const getActivity = async (req, res) => {
     const userId = req.user.id;
 
     const task = await prisma.task.findUnique({
-      where: { id: taskId }
+      where: { id: taskId },
     });
 
     if (!task) {
       return res.status(404).json({
         success: false,
-        message: "Task not found"
+        message: 'Task not found',
       });
     }
 
@@ -369,7 +357,7 @@ const getActivity = async (req, res) => {
     if (!member) {
       return res.status(403).json({
         success: false,
-        message: "Access denied"
+        message: 'Access denied',
       });
     }
 
@@ -380,41 +368,39 @@ const getActivity = async (req, res) => {
           user: { select: { id: true, name: true, avatarUrl: true } },
           mentions: {
             include: {
-              user: { select: { id: true, name: true, username: true } }
-            }
-          }
+              user: { select: { id: true, name: true, username: true } },
+            },
+          },
         },
-        orderBy: { createdAt: "asc" }
+        orderBy: { createdAt: 'asc' },
       }),
       prisma.taskAudit.findMany({
         where: { taskId },
-        orderBy: { createdAt: "asc" }
-      })
+        orderBy: { createdAt: 'asc' },
+      }),
     ]);
 
     const activity = [
-      ...comments.map((c) => ({ type: "comment", createdAt: c.createdAt, data: c })),
-      ...auditLogs.map((a) => ({ type: "audit",   createdAt: a.createdAt, data: a }))
+      ...comments.map((c) => ({ type: 'comment', createdAt: c.createdAt, data: c })),
+      ...auditLogs.map((a) => ({ type: 'audit', createdAt: a.createdAt, data: a })),
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
     return res.status(200).json({
       success: true,
-      data: activity
+      data: activity,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: 'Internal server error',
     });
   }
 };
-
 
 module.exports = {
   createComment,
   updateComment,
   deleteComment,
-  getActivity
+  getActivity,
 };

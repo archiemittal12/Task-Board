@@ -84,7 +84,6 @@ export default function BoardPage() {
 
   // ── drag state ──────────────────────────────────────
   const draggedTask = useRef<Task | null>(null);
-  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
   const draggedColumnId = useRef<string | null>(null);
   const [dragOverColTarget, setDragOverColTarget] = useState<string | null>(null);
   // ────────────────────────────────────────────────────
@@ -159,7 +158,6 @@ export default function BoardPage() {
   ) => {
     const task = draggedTask.current;
     draggedTask.current = null;
-    setDragOverColumnId(null);
     if (!task) return;
 
     // optimistic update
